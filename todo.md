@@ -112,3 +112,7 @@
 - [ ] Revisar briefing e checklist de entregáveis
 - [ ] Preparar versão para publicação
 - [ ] Entregar ao usuário com instruções de uso
+
+## Bugs Reportados
+
+- [x] Corrigir funcionalidade de Linguagem Natural - aparece mensagem genérica "erro de parsing"

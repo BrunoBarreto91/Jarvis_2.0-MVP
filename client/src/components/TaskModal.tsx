@@ -69,8 +69,10 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
       } else {
         toast.error(result.preview || "Não foi possível interpretar a tarefa");
       }
-    } catch (error) {
-      toast.error("Erro ao interpretar tarefa");
+    } catch (error: any) {
+      console.error("[TaskModal] Parse error:", error);
+      const errorMsg = error?.message || "Erro desconhecido";
+      toast.error(`Erro ao interpretar tarefa: ${errorMsg}`);
     } finally {
       setIsParsing(false);
     }

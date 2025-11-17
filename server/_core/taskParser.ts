@@ -107,11 +107,11 @@ export async function parseNaturalLanguage(input: string): Promise<ParseResult> 
                   frente: { type: "string", enum: ["reativacao_ig", "canais_venda"] },
                   canal: { type: "string", enum: ["instagram", "mercado_livre", "shopee", "tiktok_shop"] },
                   tipo: { type: "string", enum: ["conteudo", "cadastro_listing", "politicas", "logistica", "criativos_ugc", "ads"] },
-                  prazo: { type: ["string", "null"] },
+                  prazo: { type: "string", nullable: true },
                   prioridade: { type: "string", enum: ["baixa", "media", "alta"] },
                   esforco: { type: "string", enum: ["baixo", "medio", "alto"] },
-                  bloqueador: { type: ["string", "null"] },
-                  notas: { type: ["string", "null"] },
+                  bloqueador: { type: "string", nullable: true },
+                  notas: { type: "string", nullable: true },
                 },
                 required: ["title", "frente", "canal", "tipo", "prioridade", "esforco"],
               },
@@ -177,9 +177,10 @@ export async function parseNaturalLanguage(input: string): Promise<ParseResult> 
     };
   } catch (error) {
     console.error("[TaskParser] Error parsing natural language:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return {
       success: false,
-      preview: "Error parsing task. Please try again.",
+      preview: `Erro ao processar: ${errorMessage}. Por favor, tente novamente com mais detalhes.`,
       needsConfirmation: false,
       missingFields: ["Parse error"],
     };
