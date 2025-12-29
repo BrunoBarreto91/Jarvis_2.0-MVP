@@ -3,14 +3,18 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - corepack enable
+        - corepack prepare pnpm@latest --activate
+        - pnpm install --frozen-lockfile
     build:
       commands:
-        - npm run build
+        - pnpm run build
   artifacts:
-    baseDirectory: dist  # ajuste conforme seu projeto (pode ser 'build', 'out', etc.)
+    baseDirectory: dist
     files:
       - '**/*'
+    excludeFiles:
+      - 'index.js'  # Exclui o arquivo do servidor Node.js
   cache:
     paths:
       - node_modules/**/*
