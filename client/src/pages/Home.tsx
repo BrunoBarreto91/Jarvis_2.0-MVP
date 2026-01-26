@@ -1,33 +1,53 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
-import { Streamdown } from 'streamdown';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
 export default function Home() {
-  // The userAuth hooks provides authentication state
-  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  // Comando: Buscar tarefas do Supabase
+  const loadTasks = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  // Use APP_LOGO (as image src) and APP_TITLE if needed
+    if (error) console.error("Erro ao carregar Jarvis:", error);
+    else setTasks(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold">Jarvis - Secretário Inteligente (Sandbox)</h1>
+      
+      {loading ? (
+        <p>Acessando banco de dados...</p>
+      ) : (
+        <div className="grid gap-4">
+          {tasks.length === 0 ? (
+            <p>Nenhuma tarefa encontrada. Pronto para iniciar.</p>
+          ) : (
+            tasks.map((task) => (
+              <Card key={task.id}>
+                <CardHeader>
+                  <CardTitle>{task.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>{task.description}</p>
+                  <span className="text-xs font-mono">Prioridade: {task.priority}</span>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
