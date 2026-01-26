@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-// No Amplify/Vite, usamos import.meta.env
-const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// No Vite, usamos import.meta.env
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Atenção: Variáveis de ambiente do Supabase não encontradas.");
+// Verificação de segurança em tempo de execução
+if (!supabaseUrl || supabaseUrl === 'undefined') {
+  throw new Error("Jarvis Critical Error: VITE_SUPABASE_URL is missing or undefined.");
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+export const supabase = createClient(supabaseUrl, supabaseAnonKey || '');
