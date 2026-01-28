@@ -5,11 +5,11 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Define a raiz como o local onde está este arquivo (e o index.html)
-  root: "./", 
+  root: "./",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client/src"),
+      "@shared": path.resolve(__dirname, "shared"), // RESOLVE O ERRO DO LOG
     },
   },
   build: {
