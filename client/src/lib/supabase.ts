@@ -1,18 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Captura as variáveis
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Tenta ler do ambiente, se falhar usa a string direta (Plano B)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mmbatzhqzjpxdmqrrvgf.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tYmF0emhxempweGRtcXJydmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MjE1NzgsImV4cCI6MjA4NDk5NzU3OH0.jzql4S6b1RYPnkojgvATZdxNtM1f5f6rJkbZah7-fr0';
 
-// LOG DE DEPURAÇÃO (Aparecerá no console do seu navegador)
-console.log("--- Jarvis Connection Debug ---");
-console.log("URL length:", supabaseUrl?.length || 0);
-console.log("URL starts with https:", supabaseUrl?.startsWith('https'));
-console.log("-------------------------------");
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-if (!supabaseUrl || supabaseUrl.length < 10) {
-  // Se chegar aqui, o problema é 100% no Vercel/Build
-  throw new Error("Jarvis Critical: VITE_SUPABASE_URL está vazia ou mal configurada no Vercel.");
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey || '');
+console.log("Jarvis: Conexão inicializada com URL:", supabaseUrl);
