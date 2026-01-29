@@ -6,23 +6,7 @@ export const APP_LOGO = "https://img.icons8.com/fluency/96/artificial-intelligen
 
 // Generate login URL at runtime so redirect URI reflects the current origin.
 export const getLoginUrl = () => {
-  // Tentamos pegar a URL de duas fontes para evitar erros
-  const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL || "https://manus.im";
-  const appId = import.meta.env.VITE_APP_ID || "jarvis-app";
-  
-  const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  const state = btoa(redirectUri);
-
-  try {
-    // Validamos se a URL base é válida antes de prosseguir
-    const url = new URL(`${oauthPortalUrl}/app-auth`);
-    url.searchParams.set("appId", appId);
-    url.searchParams.set("redirectUri", redirectUri);
-    url.searchParams.set("state", state);
-    url.searchParams.set("type", "signIn");
-    return url.toString();
-  } catch (e) {
-    console.error("Erro crítico: VITE_OAUTH_PORTAL_URL não configurada corretamente.");
-    return "#error-config";
-  }
+  // Para o MVP v0.1 no S3, vamos desabilitar o redirecionamento externo que causa o erro "project not found"
+  // No futuro, aqui será o link para a tela de login do Cognito ou seu portal personalizado.
+  return "/login"; 
 };

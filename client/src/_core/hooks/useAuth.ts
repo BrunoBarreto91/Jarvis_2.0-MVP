@@ -42,23 +42,17 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    // Para a v0.1, vamos simular um usuário logado para que você consiga ver a interface
+    // O erro "project not found" ocorre porque o sistema tenta buscar um usuário em um portal que não existe
+    const mockUser = { id: "1", name: "Bruno Barreto", email: "bruno@exemplo.com" };
+    
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      user: mockUser,
+      loading: false,
+      error: null,
+      isAuthenticated: true,
     };
-  }, [
-    meQuery.data,
-    meQuery.error,
-    meQuery.isLoading,
-    logoutMutation.error,
-    logoutMutation.isPending,
-  ]);
+  }, []);
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
