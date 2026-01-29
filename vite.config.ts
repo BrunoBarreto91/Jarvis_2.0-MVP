@@ -35,10 +35,26 @@ export default defineConfig({
     }
   },
   define: {
+    // Mantemos o global para bibliotecas que usam 'global'
     global: 'window',
+    // Injeção explícita para bibliotecas que buscam o '_' no escopo global
+    '_': 'window._',
   },
+
   build: {
     outDir: 'dist/public',
     emptyOutDir: true,
-  }
+    // ADICIONE ESTE BLOCO:
+    commonjsOptions: {
+      transformMixedEsModules: true, // Força a compatibilidade de módulos mistos
+    },
+    rollupOptions: {
+      output: {
+        // Garante que bibliotecas globais sejam mapeadas corretamente
+        globals: {
+          lodash: '_',
+        },
+      },
+    },
+  },
 });
