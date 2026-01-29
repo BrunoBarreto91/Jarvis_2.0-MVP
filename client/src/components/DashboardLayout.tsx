@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Download } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Download, Construction } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -30,6 +30,7 @@ import { Button } from "./ui/button";
 const menuItems = [
   { icon: LayoutDashboard, label: "Kanban", path: "/" },
   { icon: Calendar, label: "Lista por Prazo", path: "/lista-prazo" },
+  { icon: Construction, label: "Bloqueadores", path: "/bloqueadores" },
   { icon: Download, label: "Exportar", path: "/exportar" },
 ];
 
@@ -47,7 +48,7 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
+  const { loading, user } = useAuth({ redirectOnUnauthenticated: true });
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());

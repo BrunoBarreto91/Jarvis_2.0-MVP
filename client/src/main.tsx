@@ -1,3 +1,5 @@
+import _ from 'lodash';
+window._ = _; // Força o Lodash a ser global para bibliotecas carentes
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -40,7 +42,7 @@ queryClient.getMutationCache().subscribe(event => {
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "/api/trpc",
+      url: import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api/trpc` : "/api/trpc",
       transformer: superjson,
       fetch(input, init) {
         return globalThis.fetch(input, {

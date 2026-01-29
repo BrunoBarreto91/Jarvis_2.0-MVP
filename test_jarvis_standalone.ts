@@ -1,0 +1,71 @@
+
+import { ENV } from "./server/_core/env";
+
+async function invokeLLM(params: any) {
+  const payload = {
+    model: "gemini-2.5-flash",
+    messages: params.messages,
+    response_format: params.response_format,
+    max_tokens: 32768,
+    thinking: { budget_tokens: 128 }
+  };
+
+  const response = await fetch("https://forge.manus.im/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${process.env.FORGE_API_KEY}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return await response.json();
+}
+
+const SYSTEM_PROMPT = `You are a task parsing assistant for Closet A Planner, a project management tool for Instagram reactivation and multi-channel sales operations.
+Your job is to interpret natural language task descriptions and extract structured information.
+
+**Valid Enums:**
+- frente: "reativacao_ig" (Instagram reactivation) or "canais_venda" (Sales channels)
+- canal: "instagram", "mercado_livre", "shopee", "tiktok_shop"
+- tipo: "conteudo" (Content), "cadastro_listing" (Listing/Catalog), "politicas" (Policies), "logistica" (Logistics), "criativos_ugc" (Creative/UGC), "ads" (Ads)
+- prioridade: "baixa" (Low), "media" (Medium), "alta" (High)
+- esforco: "baixo" (Low), "medio" (Medium), "alto" (High)
+
+**Parsing Rules:**
+1. Always extract a clear, concise title (max 255 chars)
+2. Infer frente from context:
+   - Instagram-related → "reativacao_ig"
+   - Mercado Livre, Shopee, TikTok Shop → "canais_venda"
+3. Infer canal from keywords (Instagram, ML, Shopee, TikTok Shop)
+4. Infer tipo from task description keywords
+5. Parse prazo (deadline) from relative dates like "today", "tomorrow", "next week", "D1", "D2", etc.
+   - Return ISO 8601 date format (YYYY-MM-DD)
+   - If no date specified, return null
+6. Default prioridade to "media" if not specified
+7. Default esforco to "medio" if not specified
+8. Extract bloqueador (blocker) if mentioned (e.g., "waiting for supplier response")
+9. Extract notas (notes) if additional context is provided`;
+
+async function testInput(input: string) {
+  console.log(`\n📝 Testando: "${input}"`);
+  
+  const response = await invokeLLM({
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: `Parse this task description: "${input}"` }
+    ],
+    response_format: { type: "json_object" }
+  });
+
+  const content = response.choices[0].message.content;
+  console.log("🤖 Resposta da IA:");
+  console.log(content);
+}
+
+async function run() {
+  await testInput("Postar manifesto de reativação no IG hoje à tarde, prioridade alta, preciso falar com o designer antes");
+  await testInput("Preciso organizar as fotos do estoque hoje");
+}
+
+run();
