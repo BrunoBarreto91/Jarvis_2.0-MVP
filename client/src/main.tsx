@@ -1,4 +1,3 @@
-// ATENÇÃO: Verifique se não há outro import de 'lodash' abaixo deste
 import * as _ from 'lodash-es';
 (window as any)._ = _;
 
