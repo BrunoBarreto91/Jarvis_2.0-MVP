@@ -9,11 +9,26 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client/src"),
-      "@shared": path.resolve(__dirname, "shared"), // RESOLVE O ERRO DO LOG
+      "@shared": path.resolve(__dirname, "shared"),
     },
   },
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'wouter'],
+          'vendor-ui': [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-select', 
+            '@radix-ui/react-dropdown-menu',
+            'lucide-react', 
+            'framer-motion'
+          ],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 800,
   },
 });

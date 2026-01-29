@@ -11,15 +11,16 @@ interface CognitiveLoadAlertProps {
   threshold?: number;
 }
 
-const EFFORT_POINTS = {
-  baixo: 1,
-  medio: 2,
-  alto: 3,
+// No Jarvis 2.0, o tempo é a unidade de medida para combater o Time Blindness
+const EFFORT_MINUTES = {
+  baixo: 30,  // Tarefas rápidas
+  medio: 90,  // Foco moderado
+  alto: 240,  // Hyperfocus potencial (4h+)
 };
 
-const PRIORITY_BONUS = {
-  alta: 1,
-  media: 0,
+const STRESS_POINTS = {
+  alta: 3,
+  media: 1,
   baixa: 0,
 };
 
@@ -41,11 +42,11 @@ export function CognitiveLoadAlert({ tasks, threshold = 10 }: CognitiveLoadAlert
   // Calculate cognitive load for each date
   const overloadedDates = Object.entries(tasksByDate)
     .map(([dateKey, dateTasks]) => {
-      const load = dateTasks.reduce((sum, task) => {
-        const effortPoints = EFFORT_POINTS[task.esforco];
-        const priorityBonus = PRIORITY_BONUS[task.prioridade];
-        return sum + effortPoints + priorityBonus;
-      }, 0);
+      const totalMinutes = dateTasks.reduce((sum, task) => sum + EFFORT_MINUTES[task.esforco as keyof typeof EFFORT_MINUTES], 0);
+      const totalStress = dateTasks.reduce((sum, task) => sum + STRESS_POINTS[task.prioridade as keyof typeof STRESS_POINTS], 0);
+      
+      // A carga é uma combinação de tempo e estresse mental
+      const load = (totalMinutes / 60) + totalStress;
 
       return {
         dateKey,
@@ -73,12 +74,12 @@ export function CognitiveLoadAlert({ tasks, threshold = 10 }: CognitiveLoadAlert
           </AlertTitle>
           <AlertDescription className="text-warning-foreground space-y-2">
             <p>
-              Você agendou <strong>{item.load} pontos de esforço</strong> para{" "}
+              O Jarvis detectou <strong>{Math.round(item.load)} unidades de carga</strong> para{" "}
               <strong>{format(item.date, "dd/MM/yyyy (EEEE)", { locale: ptBR })}</strong>.
             </p>
             <p className="text-sm">
-              {item.tasks.length} tarefas agendadas. Recomendamos redistribuir algumas
-              tarefas não-críticas para manter um ritmo sustentável.
+              Isso equivale a aproximadamente <strong>{Math.floor(item.tasks.reduce((s, t) => s + EFFORT_MINUTES[t.esforco as keyof typeof EFFORT_MINUTES], 0) / 60)} horas</strong> de foco intenso. 
+              Cuidado com o <em>hyperfocus</em> em detalhes irrelevantes.
             </p>
 
             <div className="flex gap-2 mt-3">
