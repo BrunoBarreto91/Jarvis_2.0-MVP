@@ -8,18 +8,24 @@ import DashboardLayout from "./components/DashboardLayout";
 import Kanban from "./pages/Kanban";
 import ListaPrazo from "./pages/ListaPrazo";
 import Exportar from "./pages/Exportar";
+import Login from "./pages/Login";
 
 function Router() {
   return (
-    <DashboardLayout>
-      <Switch>
-        <Route path={"/"} component={Kanban} />
+    <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="*">
+          <DashboardLayout>
+            <Switch>
+              <Route path={"/"} component={Kanban} />
         <Route path={"/lista-prazo"} component={ListaPrazo} />
         <Route path={"/exportar"} component={Exportar} />
         <Route path={"/404"} component={NotFound} />
         <Route component={NotFound} />
+            </Switch>
+          </DashboardLayout>
+        </Route>
       </Switch>
-    </DashboardLayout>
   );
 }
 

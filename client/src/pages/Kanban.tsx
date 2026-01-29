@@ -7,6 +7,7 @@ import { TaskCard } from "@/components/TaskCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Loader2, Filter } from "lucide-react";
+import { FileUpload } from "@/components/FileUpload";
 import { Task } from "../../../drizzle/schema";
 import {
   Select,
@@ -112,6 +113,8 @@ export default function Kanban() {
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <FileUpload />
+            <div className="h-6 w-px bg-border mx-2 hidden sm:block" />
             <Filter className="w-4 h-4 text-muted-foreground" />
             <Select value={selectedFrente} onValueChange={setSelectedFrente}>
               <SelectTrigger className="w-[180px] sm:w-[200px]">
