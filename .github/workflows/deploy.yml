@@ -27,6 +27,11 @@ jobs:
 
       - name: Build
         run: pnpm run build
+        env:
+          VITE_APP_TITLE: "Jarvis 2.0"
+          VITE_APP_ID: "jarvis-app"
+          VITE_OAUTH_PORTAL_URL: "https://manus.im"
+          VITE_API_BASE_URL: "https://ucwealuc67.execute-api.us-east-1.amazonaws.com"
 
       - name: Deploy to S3
         uses: jakejarvis/s3-sync-action@master
