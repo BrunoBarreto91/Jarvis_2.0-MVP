@@ -1,3 +1,5 @@
+import _ from 'lodash';
+window._ = _; // Força o Lodash a ser global para bibliotecas carentes
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
