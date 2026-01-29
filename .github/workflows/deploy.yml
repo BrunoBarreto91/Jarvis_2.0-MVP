@@ -20,7 +20,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --legacy-peer-deps
+        run: pnpm install --no-frozen-lockfile
 
       - name: Inject API URL
         run: sed -i 's|/api/trpc|https://ucwealuc67.execute-api.us-east-1.amazonaws.com/api/trpc|g' client/src/main.tsx
@@ -33,7 +33,7 @@ jobs:
         with:
           args: --acl public-read --follow-symlinks --delete
         env:
-          AWS_S3_BUCKET: 'jarvis-ui-bruno' # O nome que você criou no S3
+          AWS_S3_BUCKET: 'jarvis-user-interface'
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: 'us-east-1'
