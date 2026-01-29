@@ -3,18 +3,14 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Importações Universais (Capturam todos os formatos de exportação)
+// Importações Universais (Plugins)
 import * as ManusPlugin from 'vite-plugin-manus-runtime';
 import * as JsxLocPlugin from '@builder.io/vite-plugin-jsx-loc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/**
- * Função Utilitária para extrair plugins de módulos mal formatados (ESM/CJS Mix)
- * @param module O módulo importado via * as
- * @param fallbackName O nome provável da função caso não seja default
- */
+// Função Adaptadora de Plugins
 const extractPlugin = (module: any, fallbackName?: string) => {
   if (typeof module === 'function') return module;
   if (module.default && typeof module.default === 'function') return module.default;
@@ -32,29 +28,21 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './client/src'),
       '@shared': path.resolve(__dirname, './shared'),
+      // A CORREÇÃO MÁGICA:
+      // Redireciona qualquer pedido de 'lodash' (CommonJS) para 'lodash-es' (ESM Tree-shakeable)
+      'lodash': 'lodash-es',
     }
   },
   define: {
-    // Mantemos o global para bibliotecas que usam 'global'
+    // Mantemos APENAS o global, pois é necessário para o AWS SDK
     global: 'window',
-    // Injeção explícita para bibliotecas que buscam o '_' no escopo global
-    '_': 'window._',
+    // REMOVIDO: '_': 'window._' (Causa do erro atual)
   },
-
   build: {
     outDir: 'dist/public',
     emptyOutDir: true,
-    // ADICIONE ESTE BLOCO:
     commonjsOptions: {
-      transformMixedEsModules: true, // Força a compatibilidade de módulos mistos
-    },
-    rollupOptions: {
-      output: {
-        // Garante que bibliotecas globais sejam mapeadas corretamente
-        globals: {
-          lodash: '_',
-        },
-      },
+      transformMixedEsModules: true,
     },
   },
 });
