@@ -2,7 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import { manusRuntime } from "vite-plugin-manus-runtime";
+// Alterado de { manusRuntime } para o import padrão (default)
+import manusRuntime from "vite-plugin-manus-runtime";
 import jsxLoc from "@builder.io/vite-plugin-jsx-loc";
 
 export default defineConfig({
@@ -14,13 +15,13 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // Sincronizado com tsconfig.json
+      // Sincronizado com o seu tsconfig.json
       "@": path.resolve(__dirname, "./client/src"),
       "@shared": path.resolve(__dirname, "./shared"),
     },
   },
   define: {
-    // Injeção para compatibilidade de bibliotecas antigas que buscam o '_' global
+    // Injeção para o lodash-es e bibliotecas que buscam o '_' global
     "_": "window._",
   },
   build: {
