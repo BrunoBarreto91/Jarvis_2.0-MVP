@@ -1,3 +1,6 @@
+import * as _ from 'lodash-es';
+// @ts-ignore
+window._ = (_ as any).default || _;
 import _ from 'lodash';
 window._ = _; // Força o Lodash a ser global para bibliotecas carentes
 import { trpc } from "@/lib/trpc";
