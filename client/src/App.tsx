@@ -27,21 +27,24 @@ function Router() {
   });
 
   useEffect(() => {
-    const hasCode = new URLSearchParams(window.location.search).has("code");
+  // Se ainda estiver carregando o token, não tome nenhuma decisão de rota
+  if (auth.isLoading) return;
 
-    // 1. Se estiver logado e ainda estiver na página de login, VÁ PARA O DASHBOARD
-    if (auth.isAuthenticated && location === "/login") {
-        console.log("🚀 Autenticado! Movendo para o Dashboard...");
-        setLocation("/");
-        return;
-    }
+  const hasCode = new URLSearchParams(window.location.search).has("code");
 
-    // SÓ redireciona se não estiver carregando, não estiver logado, não estiver no login e NÃO houver código na URL
-    if (!auth.isLoading && !auth.isAuthenticated && location !== "/login" && !hasCode) {
-      console.warn("🔒 Acesso negado: Redirecionando para login.");
-      setLocation("/login");
-    }
-  }, [auth.isAuthenticated, auth.isLoading, location, setLocation]);
+  // Se autenticado e na tela de login, vá para a Home
+  if (auth.isAuthenticated && location === "/login") {
+    console.log("🚀 Autenticado! Movendo para o Dashboard...");
+    setLocation("/");
+    return;
+  }
+
+  // SÓ manda para o login se: NÃO estiver logado E NÃO houver código de processamento na URL
+  if (!auth.isAuthenticated && location !== "/login" && !hasCode) {
+    console.warn("🔒 Acesso negado: Redirecionando para login.");
+    setLocation("/login");
+  }
+}, [auth.isAuthenticated, auth.isLoading, location, setLocation]);
 
   // TELA DE ERRO ROBUSTA
   if (auth.error) {
