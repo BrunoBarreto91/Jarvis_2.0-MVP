@@ -19,10 +19,12 @@ function Router() {
 
   // Monitora o estado de autenticação para proteger as rotas
   useEffect(() => {
-    if (!auth.isLoading && !auth.isAuthenticated && location !== "/login") {
-      setLocation("/login");
-    }
-  }, [auth.isAuthenticated, auth.isLoading, location, setLocation]);
+  const hasCode = new URLSearchParams(window.location.search).has("code");
+
+  if (!auth.isLoading && !auth.isAuthenticated && location !== "/login" && !hasCode) {
+    setLocation("/login");
+  }
+}, [auth.isAuthenticated, auth.isLoading, location, setLocation]);
 
   if (auth.isLoading) {
     return (
