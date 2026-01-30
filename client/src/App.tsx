@@ -29,6 +29,13 @@ function Router() {
   useEffect(() => {
     const hasCode = new URLSearchParams(window.location.search).has("code");
 
+    // 1. Se estiver logado e ainda estiver na página de login, VÁ PARA O DASHBOARD
+    if (auth.isAuthenticated && location === "/login") {
+        console.log("🚀 Autenticado! Movendo para o Dashboard...");
+        setLocation("/");
+        return;
+    }
+
     // SÓ redireciona se não estiver carregando, não estiver logado, não estiver no login e NÃO houver código na URL
     if (!auth.isLoading && !auth.isAuthenticated && location !== "/login" && !hasCode) {
       console.warn("🔒 Acesso negado: Redirecionando para login.");
