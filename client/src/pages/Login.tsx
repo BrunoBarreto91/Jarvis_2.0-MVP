@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { APP_LOGO, APP_TITLE } from "@/const";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 
-// Nota: Em um ambiente real, usaríamos a biblioteca 'amazon-cognito-identity-js' ou 'aws-amplify'
+// Nota: Em um ambiente real, usarÃ­amos a biblioteca 'amazon-cognito-identity-js' ou 'aws-amplify'
 // Mas para manter leve e direto no MVP, podemos usar a API do Cognito via fetch
 const COGNITO_REGION = "us-east-1";
 const CLIENT_ID = "4lq4qmusum75oqfjm0v9n272cg";
@@ -48,7 +48,7 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Falha na autenticação");
+        throw new Error(data.message || "Falha na autenticaÃ§Ã£o");
       }
 
       // Salvar tokens (simples para o MVP, idealmente usar cookies seguros ou context)
@@ -56,7 +56,7 @@ export default function Login() {
       localStorage.setItem("jarvis_id_token", data.AuthenticationResult.IdToken);
       localStorage.setItem("jarvis_refresh_token", data.AuthenticationResult.RefreshToken);
       
-      // Salvar dados básicos do usuário
+      // Salvar dados bÃ¡sicos do usuÃ¡rio
       localStorage.setItem("jarvis_user", JSON.stringify({
         email: email,
         name: "Bruno Barreto", // No futuro, extrair do ID Token

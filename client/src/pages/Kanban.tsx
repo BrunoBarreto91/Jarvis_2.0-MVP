@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { TaskModal } from "@/components/TaskModal";
 import { CognitiveLoadAlert } from "@/components/CognitiveLoadAlert";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
@@ -24,7 +24,7 @@ const statusLabels: Record<Status, string> = {
   todo: "A Fazer",
   doing: "Em Andamento",
   blocked: "Bloqueado",
-  done: "Concluído",
+  done: "ConcluÃ­do",
 };
 
 const statusColors: Record<Status, string> = {
@@ -109,7 +109,7 @@ export default function Kanban() {
 
   return (
     <div className="h-full bg-background">
-      {/* Filtros e Ações */}
+      {/* Filtros e AÃ§Ãµes */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -122,7 +122,7 @@ export default function Kanban() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as frentes</SelectItem>
-                <SelectItem value="reativacao_ig">Reativação IG</SelectItem>
+                <SelectItem value="reativacao_ig">ReativaÃ§Ã£o IG</SelectItem>
                 <SelectItem value="canais_venda">Canais de Venda</SelectItem>
               </SelectContent>
             </Select>

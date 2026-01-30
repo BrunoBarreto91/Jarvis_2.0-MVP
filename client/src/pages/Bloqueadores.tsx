@@ -1,4 +1,4 @@
-import { trpc } from "@/lib/trpc";
+﻿import { trpc } from "@/lib/trpc";
 import { TaskCard } from "@/components/TaskCard";
 import { Loader2, Construction, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,7 +24,7 @@ export default function Bloqueadores() {
           Radar de Bloqueadores
         </h1>
         <p className="text-muted-foreground">
-          Estas tarefas estão impedindo o seu fluxo. O Jarvis recomenda resolver estas pendências antes de iniciar novos ciclos de hyperfocus.
+          Estas tarefas estÃ£o impedindo o seu fluxo. O Jarvis recomenda resolver estas pendÃªncias antes de iniciar novos ciclos de hyperfocus.
         </p>
       </div>
 
@@ -37,7 +37,7 @@ export default function Bloqueadores() {
               </div>
               <TaskCard 
                 task={task} 
-                onClick={() => {}} // TODO: Abrir modal de edição
+                onClick={() => {}} // TODO: Abrir modal de ediÃ§Ã£o
               />
               {task.bloqueador && (
                 <Alert className="mt-2 bg-destructive/5 border-destructive/20">

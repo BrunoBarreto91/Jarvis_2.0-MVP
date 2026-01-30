@@ -1,4 +1,4 @@
-import { Task } from "../../../drizzle/schema";
+﻿import { Task } from "../../../drizzle/schema";
 import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { Calendar, AlertCircle, Grip } from "lucide-react";
@@ -12,7 +12,7 @@ interface TaskCardProps {
 }
 
 const frenteLabels = {
-  reativacao_ig: "Reativação IG",
+  reativacao_ig: "ReativaÃ§Ã£o IG",
   canais_venda: "Canais de Venda",
 };
 
@@ -24,10 +24,10 @@ const canalLabels = {
 };
 
 const tipoLabels = {
-  conteudo: "Conteúdo",
+  conteudo: "ConteÃºdo",
   cadastro_listing: "Cadastro/Listing",
-  politicas: "Políticas",
-  logistica: "Logística",
+  politicas: "PolÃ­ticas",
+  logistica: "LogÃ­stica",
   criativos_ugc: "Criativos/UGC",
   ads: "Ads",
 };
@@ -40,7 +40,7 @@ const prioridadeColors = {
 
 const esforcoLabels = {
   baixo: "Baixo",
-  medio: "Médio",
+  medio: "MÃ©dio",
   alto: "Alto",
 };
 
@@ -61,7 +61,7 @@ export function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base leading-tight mb-2 line-clamp-2">
-              {isBlocked && <span className="mr-1">🚧</span>}
+              {isBlocked && <span className="mr-1">ðŸš§</span>}
               {task.title}
             </h3>
             <div className="flex flex-wrap gap-1.5">
@@ -96,13 +96,13 @@ export function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
           </div>
         )}
 
-        {/* Prioridade e Esforço */}
+        {/* Prioridade e EsforÃ§o */}
         <div className="flex items-center gap-2 pt-1">
           <Badge className={`text-xs ${prioridadeColors[task.prioridade]}`}>
-            {task.prioridade === "alta" ? "⭐ Alta" : task.prioridade === "media" ? "Média" : "Baixa"}
+            {task.prioridade === "alta" ? "â­ Alta" : task.prioridade === "media" ? "MÃ©dia" : "Baixa"}
           </Badge>
           <Badge variant="secondary" className="text-xs">
-            💪 {esforcoLabels[task.esforco]}
+            ðŸ’ª {esforcoLabels[task.esforco]}
           </Badge>
         </div>
 

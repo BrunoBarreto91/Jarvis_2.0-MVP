@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+﻿import _ from 'lodash';
 (window as any)._ = _;
 
 import { StrictMode } from "react";
@@ -13,7 +13,7 @@ import _ from 'lodash';
 if (typeof window !== 'undefined') {
   (window as any)._ = _;
 }
-// Criado o cliente aqui mesmo para não depender de arquivo faltando no /lib
+// Criado o cliente aqui mesmo para nÃ£o depender de arquivo faltando no /lib
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(

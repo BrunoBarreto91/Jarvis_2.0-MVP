@@ -1,4 +1,4 @@
-import { Task } from "../../../drizzle/schema";
+﻿import { Task } from "../../../drizzle/schema";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";
 import { AlertTriangle, X } from "lucide-react";
@@ -11,9 +11,9 @@ interface CognitiveLoadAlertProps {
   threshold?: number;
 }
 
-// No Jarvis 2.0, o tempo é a unidade de medida para combater o Time Blindness
+// No Jarvis 2.0, o tempo Ã© a unidade de medida para combater o Time Blindness
 const EFFORT_MINUTES = {
-  baixo: 30,  // Tarefas rápidas
+  baixo: 30,  // Tarefas rÃ¡pidas
   medio: 90,  // Foco moderado
   alto: 240,  // Hyperfocus potencial (4h+)
 };
@@ -45,7 +45,7 @@ export function CognitiveLoadAlert({ tasks, threshold = 10 }: CognitiveLoadAlert
       const totalMinutes = dateTasks.reduce((sum, task) => sum + EFFORT_MINUTES[task.esforco as keyof typeof EFFORT_MINUTES], 0);
       const totalStress = dateTasks.reduce((sum, task) => sum + STRESS_POINTS[task.prioridade as keyof typeof STRESS_POINTS], 0);
       
-      // A carga é uma combinação de tempo e estresse mental
+      // A carga Ã© uma combinaÃ§Ã£o de tempo e estresse mental
       const load = (totalMinutes / 60) + totalStress;
 
       return {
@@ -70,7 +70,7 @@ export function CognitiveLoadAlert({ tasks, threshold = 10 }: CognitiveLoadAlert
         >
           <AlertTriangle className="h-5 w-5 text-warning-foreground" />
           <AlertTitle className="text-warning-foreground font-semibold">
-            ⚠️ Atenção: Risco de Sobrecarga Cognitiva
+            âš ï¸ AtenÃ§Ã£o: Risco de Sobrecarga Cognitiva
           </AlertTitle>
           <AlertDescription className="text-warning-foreground space-y-2">
             <p>
@@ -89,10 +89,10 @@ export function CognitiveLoadAlert({ tasks, threshold = 10 }: CognitiveLoadAlert
                 className="bg-background/50 hover:bg-background"
                 onClick={() => {
                   // TODO: Implement redistribution suggestions
-                  alert("Funcionalidade de redistribuição em desenvolvimento");
+                  alert("Funcionalidade de redistribuiÃ§Ã£o em desenvolvimento");
                 }}
               >
-                Ver Sugestões de Redistribuição
+                Ver SugestÃµes de RedistribuiÃ§Ã£o
               </Button>
               <Button
                 size="sm"

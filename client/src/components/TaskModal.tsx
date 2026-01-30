@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -55,7 +55,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
 
   const handleParseNatural = async () => {
     if (!naturalInput.trim()) {
-      toast.error("Digite uma descrição da tarefa");
+      toast.error("Digite uma descriÃ§Ã£o da tarefa");
       return;
     }
 
@@ -67,7 +67,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
         setPreview(result);
         toast.success("Tarefa interpretada com sucesso!");
       } else {
-        toast.error(result.preview || "Não foi possível interpretar a tarefa");
+        toast.error(result.preview || "NÃ£o foi possÃ­vel interpretar a tarefa");
       }
     } catch (error: any) {
       console.error("[TaskModal] Parse error:", error);
@@ -96,7 +96,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
 
   const handleManualSubmit = async () => {
     if (!formData.title.trim()) {
-      toast.error("Título é obrigatório");
+      toast.error("TÃ­tulo Ã© obrigatÃ³rio");
       return;
     }
 
@@ -170,7 +170,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
             <div className="space-y-2">
               <Label>Descreva a tarefa</Label>
               <Textarea
-                placeholder='Ex: "Post fixado manifesto no IG para hoje alta" ou "Configurar conta Shopee amanhã média logística"'
+                placeholder='Ex: "Post fixado manifesto no IG para hoje alta" ou "Configurar conta Shopee amanhÃ£ mÃ©dia logÃ­stica"'
                 value={naturalInput}
                 onChange={(e) => setNaturalInput(e.target.value)}
                 rows={4}
@@ -243,7 +243,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
         {mode === "manual" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
+              <Label htmlFor="title">TÃ­tulo *</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -263,7 +263,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="reativacao_ig">Reativação IG</SelectItem>
+                    <SelectItem value="reativacao_ig">ReativaÃ§Ã£o IG</SelectItem>
                     <SelectItem value="canais_venda">Canais de Venda</SelectItem>
                   </SelectContent>
                 </Select>
@@ -299,10 +299,10 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="conteudo">Conteúdo</SelectItem>
+                    <SelectItem value="conteudo">ConteÃºdo</SelectItem>
                     <SelectItem value="cadastro_listing">Cadastro/Listing</SelectItem>
-                    <SelectItem value="politicas">Políticas</SelectItem>
-                    <SelectItem value="logistica">Logística</SelectItem>
+                    <SelectItem value="politicas">PolÃ­ticas</SelectItem>
+                    <SelectItem value="logistica">LogÃ­stica</SelectItem>
                     <SelectItem value="criativos_ugc">Criativos/UGC</SelectItem>
                     <SelectItem value="ads">Ads</SelectItem>
                   </SelectContent>
@@ -332,14 +332,14 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="baixa">Baixa</SelectItem>
-                    <SelectItem value="media">Média</SelectItem>
+                    <SelectItem value="media">MÃ©dia</SelectItem>
                     <SelectItem value="alta">Alta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="esforco">Esforço</Label>
+                <Label htmlFor="esforco">EsforÃ§o</Label>
                 <Select
                   value={formData.esforco}
                   onValueChange={(v) => setFormData({ ...formData, esforco: v as any })}
@@ -349,7 +349,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="baixo">Baixo</SelectItem>
-                    <SelectItem value="medio">Médio</SelectItem>
+                    <SelectItem value="medio">MÃ©dio</SelectItem>
                     <SelectItem value="alto">Alto</SelectItem>
                   </SelectContent>
                 </Select>
@@ -372,7 +372,7 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
                 id="notas"
                 value={formData.notas}
                 onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                placeholder="Informações adicionais..."
+                placeholder="InformaÃ§Ãµes adicionais..."
                 rows={3}
               />
             </div>

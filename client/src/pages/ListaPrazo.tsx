@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { TaskModal } from "@/components/TaskModal";
 import { CognitiveLoadAlert } from "@/components/CognitiveLoadAlert";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
@@ -104,7 +104,7 @@ export default function ListaPrazo() {
 
   return (
     <div className="h-full bg-background">
-      {/* Filtros Rápidos */}
+      {/* Filtros RÃ¡pidos */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container py-3">
           <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
@@ -118,7 +118,7 @@ export default function ListaPrazo() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="tomorrow" className="gap-2">
-                Amanhã
+                AmanhÃ£
                 {tomorrowCount > 0 && (
                   <span className="ml-1 px-2 py-0.5 text-xs bg-primary/20 rounded-full">
                     {tomorrowCount}

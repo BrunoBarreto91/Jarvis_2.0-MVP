@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
+﻿import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, File, X, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 // Nota: Para o MVP, usaremos o bucket configurado: jarvis-user-interface
-// Em uma implementação final, usaríamos Presigned URLs via API
+// Em uma implementaÃ§Ã£o final, usarÃ­amos Presigned URLs via API
 const S3_BUCKET = "jarvis-user-interface";
 const REGION = "us-east-1";
 
@@ -24,10 +24,10 @@ export function FileUpload() {
 
     setIsUploading(true);
     try {
-      // Nota: Esta é uma simulação de upload direto. 
-      // Para funcionar sem Presigned URL, o bucket precisaria de permissão de escrita pública (não recomendado)
-      // Ou usaríamos o AWS SDK no frontend com as credenciais (também não recomendado expor no frontend)
-      // O ideal é o backend gerar a URL. Para este MVP, vamos simular o sucesso e mostrar como seria a UI.
+      // Nota: Esta Ã© uma simulaÃ§Ã£o de upload direto. 
+      // Para funcionar sem Presigned URL, o bucket precisaria de permissÃ£o de escrita pÃºblica (nÃ£o recomendado)
+      // Ou usarÃ­amos o AWS SDK no frontend com as credenciais (tambÃ©m nÃ£o recomendado expor no frontend)
+      // O ideal Ã© o backend gerar a URL. Para este MVP, vamos simular o sucesso e mostrar como seria a UI.
       
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simular delay
       
@@ -80,7 +80,7 @@ export function FileUpload() {
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="w-4 h-4" />
-          <span className="hidden sm:inline">Importar Calendário/Relatório</span>
+          <span className="hidden sm:inline">Importar CalendÃ¡rio/RelatÃ³rio</span>
         </Button>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 
 // Tenta ler do ambiente, se falhar usa a string direta (Plano B)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mmbatzhqzjpxdmqrrvgf.supabase.co';
@@ -6,4 +6,4 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIU
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-console.log("Jarvis: Conexão inicializada com URL:", supabaseUrl);
+console.log("Jarvis: ConexÃ£o inicializada com URL:", supabaseUrl);

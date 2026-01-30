@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Base HTTP error class with status code.
  * Throw this from route handlers to send specific HTTP errors.
  */

@@ -28,7 +28,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './client/src'),
       '@shared': path.resolve(__dirname, './shared'),
-      // REMOVIDO: O alias que causava o erro. Agora usamos o padrão.
+      // NOVO ALIAS: Redireciona o problemático para o estável
+      'lodash-es': 'lodash',
     }
   },
   define: {

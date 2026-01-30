@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,7 +112,7 @@ export default function Exportar() {
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Exportar Dados</h1>
           <p className="text-muted-foreground">
-            Exporte suas tarefas e logs em formato CSV ou JSON para análise externa ou backup.
+            Exporte suas tarefas e logs em formato CSV ou JSON para anÃ¡lise externa ou backup.
           </p>
         </div>
 
@@ -124,13 +124,13 @@ export default function Exportar() {
               Exportar Tarefas
             </CardTitle>
             <CardDescription>
-              Todas as tarefas com metadados completos (título, frente, canal, tipo, status, prazo, prioridade, esforço, bloqueador, notas, timestamps)
+              Todas as tarefas com metadados completos (tÃ­tulo, frente, canal, tipo, status, prazo, prioridade, esforÃ§o, bloqueador, notas, timestamps)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span>{tasks?.length || 0} tarefas disponíveis para exportação</span>
+              <span>{tasks?.length || 0} tarefas disponÃ­veis para exportaÃ§Ã£o</span>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -179,10 +179,10 @@ export default function Exportar() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Download className="w-5 h-5" />
-              Exportar Logs de Mudanças
+              Exportar Logs de MudanÃ§as
             </CardTitle>
             <CardDescription>
-              Histórico completo de mudanças de status das tarefas (em breve)
+              HistÃ³rico completo de mudanÃ§as de status das tarefas (em breve)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -196,12 +196,12 @@ export default function Exportar() {
         {/* Info Card */}
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="pt-6">
-            <h3 className="font-semibold text-foreground mb-2">💡 Dica: Use os dados exportados para</h3>
+            <h3 className="font-semibold text-foreground mb-2">ðŸ’¡ Dica: Use os dados exportados para</h3>
             <ul className="space-y-1 text-sm text-muted-foreground">
-              <li>• Análise de produtividade no Excel/Google Sheets</li>
-              <li>• Integração com ferramentas de BI e dashboards</li>
-              <li>• Backup regular dos seus dados</li>
-              <li>• Preparação para migração futura (Dashboard 1.5, ERP Core)</li>
+              <li>â€¢ AnÃ¡lise de produtividade no Excel/Google Sheets</li>
+              <li>â€¢ IntegraÃ§Ã£o com ferramentas de BI e dashboards</li>
+              <li>â€¢ Backup regular dos seus dados</li>
+              <li>â€¢ PreparaÃ§Ã£o para migraÃ§Ã£o futura (Dashboard 1.5, ERP Core)</li>
             </ul>
           </CardContent>
         </Card>

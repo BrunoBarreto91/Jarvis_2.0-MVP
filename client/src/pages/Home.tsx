@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -25,7 +25,7 @@ export default function Home() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Jarvis - Secretário Inteligente (Sandbox)</h1>
+      <h1 className="text-2xl font-bold">Jarvis - SecretÃ¡rio Inteligente (Sandbox)</h1>
       
       {loading ? (
         <p>Acessando banco de dados...</p>
