@@ -1,4 +1,4 @@
-import * as _ from 'lodash-es';
+import * as _ from 'lodash';
 (window as any)._ = _;
 
 import { StrictMode } from "react";
