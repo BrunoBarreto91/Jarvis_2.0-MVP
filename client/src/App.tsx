@@ -1,7 +1,7 @@
 ﻿import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
@@ -10,89 +10,57 @@ import ListaPrazo from "./pages/ListaPrazo";
 import Exportar from "./pages/Exportar";
 import Login from "./pages/Login";
 import Bloqueadores from "./pages/Bloqueadores";
-import { useAuth } from "react-oidc-context"; //
-import { useEffect } from "react";
+import { useAuth } from "react-oidc-context";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function Router() {
   const auth = useAuth();
-  const [location, setLocation] = useLocation();
 
-  // Depuração de estado no Console
+  // Log de depuração essencial
   console.log("Jarvis Auth State:", {
     isLoading: auth.isLoading,
-    isAuthenticated: auth.isAuthenticated,
-    hasError: !!auth.error
+    isAuthenticated: auth.isAuthenticated
   });
 
-  useEffect(() => {
-  // Se ainda estiver carregando o token, não tome nenhuma decisão de rota
-  if (auth.isLoading) return;
-
-  const hasCode = new URLSearchParams(window.location.search).has("code");
-
-  // Se autenticado e na tela de login, vá para a Home
-  if (auth.isAuthenticated && location === "/login") {
-    console.log("🚀 Autenticado! Movendo para o Dashboard...");
-    setLocation("/");
-    return;
-  }
-
-  // SÓ manda para o login se: NÃO estiver logado E NÃO houver código de processamento na URL
-  if (!auth.isAuthenticated && location !== "/login" && !hasCode) {
-    console.warn("🔒 Acesso negado: Redirecionando para login.");
-    setLocation("/login");
-  }
-}, [auth.isAuthenticated, auth.isLoading, location, setLocation]);
-
-  // TELA DE ERRO ROBUSTA
-  if (auth.error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-destructive/10 p-6 text-center">
-        <h2 className="text-2xl font-bold text-destructive">Falha na Autenticação</h2>
-        <p className="mt-2 text-muted-foreground">O Jarvis não conseguiu validar suas credenciais.</p>
-        <div className="mt-4 p-4 bg-background border rounded-md text-xs font-mono text-left overflow-auto max-w-lg">
-          {auth.error.message}
-        </div>
-        <Button className="mt-6" onClick={() => window.location.href = "/login"}>
-          Tentar Novamente
-        </Button>
-      </div>
-    );
-  }
-
+  // 1. Estado de carregamento: evita o loop de redirecionamento
   if (auth.isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
-        <p className="mt-4 animate-pulse">Sincronizando com Jarvis...</p>
+        <p className="mt-4 animate-pulse text-muted-foreground">Sincronizando com Jarvis...</p>
       </div>
     );
   }
 
-  return (
-    <Switch>
-      <Route path="/login" component={Login} />
+  // 2. Tratamento de erro robusto
+  if (auth.error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-destructive/5">
+        <h2 className="text-2xl font-bold text-destructive">Erro de Acesso</h2>
+        <p className="mt-2 text-muted-foreground max-w-md">{auth.error.message}</p>
+        <Button className="mt-6" onClick={() => auth.signinRedirect()}>Tentar Novamente</Button>
+      </div>
+    );
+  }
 
-      {/* Rotas Protegidas - Só acessíveis se auth.isAuthenticated for true */}
-      {auth.isAuthenticated ? (
-        <Route path="*">
-          <DashboardLayout>
-            <Switch>
-              <Route path="/" component={Kanban} />
-              <Route path="/lista-prazo" component={ListaPrazo} />
-              <Route path="/exportar" component={Exportar} />
-              <Route path="/bloqueadores" component={Bloqueadores} />
-              <Route component={NotFound} />
-            </Switch>
-          </DashboardLayout>
-        </Route>
-      ) : (
-        /* Enquanto redireciona ou se falhar, mantém no login */
-        <Route path="*" component={Login} />
-      )}
-    </Switch>
+  // 3. Se NÃO estiver autenticado, renderiza a tela de Login
+  // O OIDC cuidará de redirecionar para a AWS ao clicar no botão de login
+  if (!auth.isAuthenticated) {
+    return <Login />;
+  }
+
+  // 4. Usuário Autenticado: Renderiza o Dashboard
+  return (
+    <DashboardLayout>
+      <Switch>
+        <Route path="/" component={Kanban} />
+        <Route path="/lista-prazo" component={ListaPrazo} />
+        <Route path="/exportar" component={Exportar} />
+        <Route path="/bloqueadores" component={Bloqueadores} />
+        <Route component={NotFound} />
+      </Switch>
+    </DashboardLayout>
   );
 }
 
