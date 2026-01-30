@@ -3,7 +3,7 @@ import React, { StrictMode } from 'react';
 import { createRoot } from "react-dom/client";
 import { AuthProvider } from "react-oidc-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink } from '@trpc/client'; // Import necessário para o link
+import { httpBatchLink } from '@trpc/client';
 import { trpc } from "./lib/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import App from "./App";
@@ -13,7 +13,6 @@ if (typeof window !== 'undefined') {
   (window as any)._ = _;
 }
 
-// Configuração extraída do print da AWS
 const cognitoConfig = {
   authority: import.meta.env.VITE_COGNITO_AUTHORITY,
   client_id: import.meta.env.VITE_COGNITO_CLIENT_ID,
@@ -22,19 +21,28 @@ const cognitoConfig = {
   scope: "phone openid email",
 };
 
+const onSigninCallback = (_user: any): void => {
+  console.log("✅ Sucesso: Usuário carregado via Cognito.");
+  window.history.replaceState({}, document.title, window.location.pathname);
+};
+
+const onSigninError = (error: any): void => {
+  console.error("❌ Erro Crítico no Login Cognito:", error.message);
+  console.error("Detalhes do Erro:", error);
+};
+
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AuthProvider {...cognitoConfig}>
-      {/* Corrigido: Agora o tRPC aponta corretamente para a API da AWS */}
+    <AuthProvider
+      {...cognitoConfig}
+      onSigninCallback={onSigninCallback}
+      onSigninError={onSigninError}
+    >
       <trpc.Provider
         client={trpc.createClient({
-          links: [
-            httpBatchLink({
-              url: import.meta.env.VITE_API_BASE_URL
-            })
-          ],
+          links: [httpBatchLink({ url: import.meta.env.VITE_API_BASE_URL })]
         })}
         queryClient={queryClient}
       >
@@ -44,5 +52,5 @@ createRoot(document.getElementById("root")!).render(
         </QueryClientProvider>
       </trpc.Provider>
     </AuthProvider>
-  </StrictMode>,
+  </StrictMode>
 );

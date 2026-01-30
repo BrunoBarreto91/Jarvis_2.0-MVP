@@ -12,24 +12,51 @@ import Login from "./pages/Login";
 import Bloqueadores from "./pages/Bloqueadores";
 import { useAuth } from "react-oidc-context"; //
 import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function Router() {
-  const auth = useAuth(); //
+  const auth = useAuth();
   const [location, setLocation] = useLocation();
 
-  // Monitora o estado de autenticação para proteger as rotas
-  useEffect(() => {
-  const hasCode = new URLSearchParams(window.location.search).has("code");
+  // Depuração de estado no Console
+  console.log("Jarvis Auth State:", {
+    isLoading: auth.isLoading,
+    isAuthenticated: auth.isAuthenticated,
+    hasError: !!auth.error
+  });
 
-  if (!auth.isLoading && !auth.isAuthenticated && location !== "/login" && !hasCode) {
-    setLocation("/login");
+  useEffect(() => {
+    const hasCode = new URLSearchParams(window.location.search).has("code");
+
+    // SÓ redireciona se não estiver carregando, não estiver logado, não estiver no login e NÃO houver código na URL
+    if (!auth.isLoading && !auth.isAuthenticated && location !== "/login" && !hasCode) {
+      console.warn("🔒 Acesso negado: Redirecionando para login.");
+      setLocation("/login");
+    }
+  }, [auth.isAuthenticated, auth.isLoading, location, setLocation]);
+
+  // TELA DE ERRO ROBUSTA
+  if (auth.error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-destructive/10 p-6 text-center">
+        <h2 className="text-2xl font-bold text-destructive">Falha na Autenticação</h2>
+        <p className="mt-2 text-muted-foreground">O Jarvis não conseguiu validar suas credenciais.</p>
+        <div className="mt-4 p-4 bg-background border rounded-md text-xs font-mono text-left overflow-auto max-w-lg">
+          {auth.error.message}
+        </div>
+        <Button className="mt-6" onClick={() => window.location.href = "/login"}>
+          Tentar Novamente
+        </Button>
+      </div>
+    );
   }
-}, [auth.isAuthenticated, auth.isLoading, location, setLocation]);
 
   if (auth.isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-pulse text-primary font-medium">Sincronizando Jarvis...</div>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+        <p className="mt-4 animate-pulse">Sincronizando com Jarvis...</p>
       </div>
     );
   }
