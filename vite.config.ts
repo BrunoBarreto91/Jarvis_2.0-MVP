@@ -28,21 +28,24 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './client/src'),
       '@shared': path.resolve(__dirname, './shared'),
-      // A CORREÇÃO MÁGICA:
-      // Redireciona qualquer pedido de 'lodash' (CommonJS) para 'lodash-es' (ESM Tree-shakeable)
-      'lodash': 'lodash-es',
+      // REMOVIDO: O alias que causava o erro. Agora usamos o padrão.
     }
   },
   define: {
-    // Mantemos APENAS o global, pois é necessário para o AWS SDK
+    // Mantemos apenas o global básico
     global: 'window',
-    // REMOVIDO: '_': 'window._' (Causa do erro atual)
+  },
+  // Otimização Crítica para bibliotecas legadas (Lodash/Recharts)
+  optimizeDeps: {
+    include: ['lodash', 'recharts'],
   },
   build: {
     outDir: 'dist/public',
     emptyOutDir: true,
     commonjsOptions: {
       transformMixedEsModules: true,
+      // Força o Vite a processar o lodash como CommonJS
+      include: [/lodash/, /node_modules/],
     },
   },
 });
