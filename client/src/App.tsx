@@ -50,22 +50,15 @@ function Router() {
     return <Login />;
   }
 
-  // 4. Usuário Autenticado: Renderiza o Dashboard
+  // 4. Teste de isolamento total
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardLayout>
-        <Switch>
-          <Route path="/" component={Kanban} />
-          <Route path="/lista-prazo" component={ListaPrazo} />
-          <Route path="/exportar" component={Exportar} />
-          <Route path="/bloqueadores" component={Bloqueadores} />
-          <Route path="/login">
-             {/* Se o usuário cair no /login já estando logado, mandamos para a raiz */}
-             {() => { window.location.href = "/"; return null; }}
-          </Route>
-          <Route component={NotFound} />
-        </Switch>
-      </DashboardLayout>
+    <div style={{ padding: '50px', background: 'white', color: 'black', minHeight: '100vh', zIndex: 9999 }}>
+      <h1>Autenticação Confirmada!</h1>
+      <p>Se você está vendo isso, a autenticação OIDC está 100% ok.</p>
+      <p>O problema é o componente DashboardLayout ou Kanban.</p>
+      <button onClick={() => console.log("Dados do usuário:", auth.user)}>
+        Ver dados no Console
+      </button>
     </div>
   );
 }
