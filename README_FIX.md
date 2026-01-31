@@ -16,3 +16,18 @@
 2.  O `App.tsx` detectará a autenticação via OIDC.
 3.  O `DashboardLayout` será renderizado, e o `Kanban` buscará os dados via tRPC.
 4.  Não deve haver mais dependência de `localStorage` para a renderização inicial.
+
+## Atualização: Correção do Erro "Failed to fetch" (tRPC 404/CORS)
+
+### Problema Identificado
+As chamadas tRPC estavam falhando com `404` ou `Failed to fetch` ao tentar acessar o endpoint da API na AWS. Isso ocorria porque:
+1.  **Falta de Credenciais:** O cliente tRPC não estava configurado para enviar cookies de sessão (`credentials: 'include'`), o que é essencial para que o servidor identifique o usuário em requisições cross-origin (Vercel -> AWS).
+2.  **Configuração de URL:** A URL da API precisa ser absoluta e estar corretamente apontada para o endpoint do tRPC.
+
+### Correções Implementadas
+1.  **Configuração do Cliente tRPC:** No `main.tsx`, o `httpBatchLink` foi atualizado para incluir `credentials: 'include'` na função `fetch`. Isso garante que o cookie `app_session_id` seja enviado em todas as requisições para a API.
+2.  **Melhoria na Resiliência:** O componente `Kanban.tsx` já havia sido atualizado para tratar estados de erro, permitindo que o usuário tente novamente em caso de falha temporária.
+
+### Como Validar
+1.  Após o login, verifique no DevTools do navegador (aba Network) se as requisições para `/api/trpc/...` agora incluem o cabeçalho `Cookie` com o token de sessão.
+2.  O status da resposta deve ser `200 OK` em vez de `404` ou erro de rede.

@@ -1,4 +1,4 @@
-﻿import _ from 'lodash';
+import _ from 'lodash';
 import React, { StrictMode } from 'react';
 import { createRoot } from "react-dom/client";
 import { AuthProvider } from "react-oidc-context";
@@ -42,7 +42,25 @@ createRoot(document.getElementById("root")!).render(
     >
       <trpc.Provider
         client={trpc.createClient({
-          links: [httpBatchLink({ url: import.meta.env.VITE_API_BASE_URL })]
+          links: [
+            httpBatchLink({
+              url: import.meta.env.VITE_API_BASE_URL,
+              // Adiciona suporte a cookies/sessão para chamadas entre domínios (Vercel -> AWS)
+              headers() {
+                return {
+                  // O navegador enviará cookies automaticamente se withCredentials estiver ativo no fetch subjacente
+                  // tRPC httpBatchLink usa fetch por padrão.
+                };
+              },
+              // Força o envio de cookies em requisições cross-origin
+              fetch(url, options) {
+                return fetch(url, {
+                  ...options,
+                  credentials: 'include',
+                });
+              },
+            })
+          ]
         })}
         queryClient={queryClient}
       >
