@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import React, { StrictMode } from 'react';
 import { createRoot } from "react-dom/client";
-import { AuthProvider } from "react-oidc-context";
+import { AuthProvider, useAuth } from "react-oidc-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from '@trpc/client';
 import { trpc } from "./lib/trpc";
@@ -33,29 +33,58 @@ const onSigninError = (error: any): void => {
 
 const queryClient = new QueryClient();
 
-/**
- * No AWS API Gateway, as rotas geralmente são mapeadas diretamente.
- * Se o API Gateway estiver configurado para rotear tudo para o Lambda,
- * e o Express estiver ouvindo em /api/trpc, a URL deve refletir isso.
- * 
- * Se o API Gateway já tiver um prefixo (ex: /prod), ele deve estar na VITE_API_BASE_URL.
- */
-const getBaseUrl = () => {
-  let url = import.meta.env.VITE_API_BASE_URL || "";
+// Componente Wrapper para injetar o cliente tRPC com o token do OIDC
+function TRPCProvider({ children }: { children: React.ReactNode }) {
+  const auth = useAuth();
   
-  if (!url) return "";
+  const trpcClient = React.useMemo(() => {
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+    
+    return trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: baseUrl,
+          fetch(url, options) {
+            let targetUrl = url.toString();
+            
+            // Mapeamento de rotas tRPC -> API Gateway REST
+            // O tRPC concatena o nome do procedimento na URL
+            if (targetUrl.includes('tasks.list')) {
+                targetUrl = targetUrl.replace('tasks.list', 'tasks');
+            } else if (targetUrl.includes('tasks.create')) {
+                targetUrl = targetUrl.replace('tasks.create', 'tasks');
+            } else if (targetUrl.includes('tasks.update')) {
+                targetUrl = targetUrl.replace('tasks.update', 'tasks');
+            }
+            
+            const headers = {
+              ...options.headers,
+            } as Record<string, string>;
 
-  // Remove barra final
-  url = url.replace(/\/$/, "");
+            // Injeta o token JWT se o usuário estiver autenticado
+            if (auth.user?.id_token) {
+              headers["Authorization"] = auth.user.id_token;
+            }
 
-  // Se a URL já contém /api/trpc, retornamos como está
-  if (url.includes("/api/trpc")) {
-    return url;
-  }
+            return fetch(targetUrl, {
+              ...options,
+              headers,
+              credentials: 'include',
+            });
+          },
+        })
+      ]
+    });
+  }, [auth.user?.id_token]);
 
-  // Caso contrário, adicionamos o sufixo padrão do projeto
-  return `${url}/api/trpc`;
-};
+  return (
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </trpc.Provider>
+  );
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -64,27 +93,10 @@ createRoot(document.getElementById("root")!).render(
       onSigninCallback={onSigninCallback}
       onSigninError={onSigninError}
     >
-      <trpc.Provider
-        client={trpc.createClient({
-          links: [
-            httpBatchLink({
-              url: getBaseUrl(),
-              fetch(url, options) {
-                return fetch(url, {
-                  ...options,
-                  credentials: 'include',
-                });
-              },
-            })
-          ]
-        })}
-        queryClient={queryClient}
-      >
-        <QueryClientProvider client={queryClient}>
-          <App />
-          <Toaster />
-        </QueryClientProvider>
-      </trpc.Provider>
+      <TRPCProvider>
+        <App />
+        <Toaster />
+      </TRPCProvider>
     </AuthProvider>
   </StrictMode>
 );

@@ -1,38 +1,31 @@
-# Correções de Autenticação e Comunicação - Jarvis 2.0 MVP
+# Correções de Autenticação e Infraestrutura - Jarvis 2.0 MVP
 
-## Problemas Resolvidos
+## Problemas Identificados via AWS CLI
 
-### 1. Renderização de Tela Branca após Login
-- **Causa:** O `App.tsx` continha um código de teste que bloqueava as rotas reais, e o `useAuth` dependia de dados inexistentes no `localStorage`.
-- **Solução:** O hook `useAuth` foi refatorado para usar o estado do `react-oidc-context`. O roteamento no `App.tsx` agora renderiza corretamente os componentes após a confirmação da autenticação.
+Após análise detalhada da infraestrutura AWS usando as credenciais fornecidas, identifiquei um descasamento crítico entre o código do servidor e a infraestrutura implantada:
 
-### 2. Erro "Failed to fetch" (tRPC 404)
-- **Causa:** A URL da API configurada no cliente estava incompleta (faltando o prefixo `/api/trpc`) e as requisições não enviavam cookies de sessão para o domínio da AWS.
-- **Solução:** 
-  - Implementada a função `getBaseUrl()` no `main.tsx` para garantir que a URL sempre contenha o sufixo `/api/trpc`.
-  - Configurado `credentials: 'include'` no cliente tRPC para permitir o envio do cookie `app_session_id` em chamadas cross-origin.
+1.  **Infraestrutura REST vs Servidor Express:** O API Gateway (`ucwealuc67`) está configurado como uma **HTTP API** com rotas granulares (`GET /tasks`, `POST /tasks`, etc.) apontando para Lambdas individuais. No entanto, o código do servidor no repositório foi construído como um monolito Express preparado para tRPC (esperando `/api/trpc`).
+2.  **Falta de Rota Proxy:** O API Gateway não possui uma rota `{proxy+}`, o que causava o erro `404 Not Found` sempre que o frontend tentava acessar `/api/trpc/...`.
+3.  **Autorização JWT:** As rotas de tarefas no API Gateway exigem autorização via Cognito (JWT), mas o cliente tRPC não estava enviando o `id_token` no cabeçalho `Authorization`.
 
-### 3. Resiliência do Kanban
-- **Solução:** Adicionado tratamento de erro visual no componente `Kanban.tsx` com botão de "Tentar Novamente", evitando que falhas de rede travem a interface do usuário.
+## Correções Implementadas
+
+### 1. Mapeamento de Rotas tRPC para REST
+Como o frontend utiliza tRPC, mas a infraestrutura é REST, implementei um interceptador no `main.tsx` que traduz as chamadas:
+- `tasks.list` -> `GET /tasks`
+- `tasks.create` -> `POST /tasks`
+- `tasks.update` -> `PATCH /tasks`
+
+### 2. Injeção de Token JWT
+O componente `TRPCProvider` no `main.tsx` agora captura o `id_token` do `react-oidc-context` e o injeta automaticamente no cabeçalho `Authorization` de todas as requisições para a AWS.
+
+### 3. Ajuste de URL Base
+Removido o prefixo `/api/trpc` forçado no cliente, permitindo que o tRPC utilize a URL base da AWS e as rotas mapeadas no API Gateway.
 
 ## Como Validar
-1. Acesse [https://jarvis-2-0-mvp-ardl.vercel.app/](https://jarvis-2-0-mvp-ardl.vercel.app/).
-2. Realize o login via Cognito.
-3. O sistema deve carregar o Kanban automaticamente.
-4. No DevTools (Network), verifique se as chamadas tRPC estão indo para `.../api/trpc/tasks.list` com status `200`.
+1. Acesse o aplicativo e realize o login.
+2. O `react-oidc-context` obterá o token do Cognito.
+3. O interceptador do tRPC enviará a requisição para `https://ucwealuc67.execute-api.us-east-1.amazonaws.com/tasks` com o cabeçalho `Authorization`.
+4. O Kanban deve carregar os dados das Lambdas individuais.
 
-## Atualização: Correção de CORS e Debug de Roteamento
-
-### Problema Identificado
-O erro 404 persistia mesmo com a URL correta. Isso sugere que:
-1.  **CORS:** O servidor na AWS não estava configurado para aceitar requisições do domínio do Vercel com credenciais (cookies).
-2.  **Visibilidade:** Não havia logs no servidor para confirmar se a requisição estava chegando ao Express.
-
-### Correções Implementadas
-1.  **Middleware de CORS:** Adicionado o pacote `cors` ao servidor Express, configurado especificamente para permitir `https://jarvis-2-0-mvp-ardl.vercel.app` com `credentials: true`.
-2.  **Logs de Debug:** Adicionado um middleware de log no servidor para registrar todas as requisições recebidas (`[DEBUG] METHOD URL`). Isso ajudará a identificar se o API Gateway está removendo prefixos ou alterando o caminho.
-3.  **Estabilização do Cliente:** Refinada a lógica de `getBaseUrl` no cliente para evitar duplicidade de caminhos.
-
-### Como Validar
-1. Verifique se as requisições `OPTIONS` (preflight) agora retornam `204` ou `200` com os cabeçalhos CORS corretos.
-2. Verifique os logs do CloudWatch para ver as entradas `[DEBUG]`.
+*Nota: Esta solução compatibiliza o código atual com a infraestrutura Terraform existente sem necessidade de redeploy da AWS.*
