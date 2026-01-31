@@ -52,15 +52,21 @@ function Router() {
 
   // 4. Usuário Autenticado: Renderiza o Dashboard
   return (
-    <DashboardLayout>
-      <Switch>
-        <Route path="/" component={Kanban} />
-        <Route path="/lista-prazo" component={ListaPrazo} />
-        <Route path="/exportar" component={Exportar} />
-        <Route path="/bloqueadores" component={Bloqueadores} />
-        <Route component={NotFound} />
-      </Switch>
-    </DashboardLayout>
+    <div className="min-h-screen bg-background">
+      <DashboardLayout>
+        <Switch>
+          <Route path="/" component={Kanban} />
+          <Route path="/lista-prazo" component={ListaPrazo} />
+          <Route path="/exportar" component={Exportar} />
+          <Route path="/bloqueadores" component={Bloqueadores} />
+          <Route path="/login">
+             {/* Se o usuário cair no /login já estando logado, mandamos para a raiz */}
+             {() => { window.location.href = "/"; return null; }}
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </DashboardLayout>
+    </div>
   );
 }
 
