@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -30,6 +31,21 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // Debug middleware to log all incoming requests
+  app.use((req, res, next) => {
+    console.log(`[DEBUG] ${req.method} ${req.url}`);
+    next();
+  });
+
+  // Configure CORS for cross-origin requests from Vercel
+  app.use(cors({
+    origin: "https://jarvis-2-0-mvp-ardl.vercel.app",
+    credentials: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  }));
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

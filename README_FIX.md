@@ -20,3 +20,19 @@
 2. Realize o login via Cognito.
 3. O sistema deve carregar o Kanban automaticamente.
 4. No DevTools (Network), verifique se as chamadas tRPC estão indo para `.../api/trpc/tasks.list` com status `200`.
+
+## Atualização: Correção de CORS e Debug de Roteamento
+
+### Problema Identificado
+O erro 404 persistia mesmo com a URL correta. Isso sugere que:
+1.  **CORS:** O servidor na AWS não estava configurado para aceitar requisições do domínio do Vercel com credenciais (cookies).
+2.  **Visibilidade:** Não havia logs no servidor para confirmar se a requisição estava chegando ao Express.
+
+### Correções Implementadas
+1.  **Middleware de CORS:** Adicionado o pacote `cors` ao servidor Express, configurado especificamente para permitir `https://jarvis-2-0-mvp-ardl.vercel.app` com `credentials: true`.
+2.  **Logs de Debug:** Adicionado um middleware de log no servidor para registrar todas as requisições recebidas (`[DEBUG] METHOD URL`). Isso ajudará a identificar se o API Gateway está removendo prefixos ou alterando o caminho.
+3.  **Estabilização do Cliente:** Refinada a lógica de `getBaseUrl` no cliente para evitar duplicidade de caminhos.
+
+### Como Validar
+1. Verifique se as requisições `OPTIONS` (preflight) agora retornam `204` ou `200` com os cabeçalhos CORS corretos.
+2. Verifique os logs do CloudWatch para ver as entradas `[DEBUG]`.

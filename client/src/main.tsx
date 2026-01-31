@@ -33,18 +33,28 @@ const onSigninError = (error: any): void => {
 
 const queryClient = new QueryClient();
 
-// Função para garantir que a URL da API esteja correta
+/**
+ * No AWS API Gateway, as rotas geralmente são mapeadas diretamente.
+ * Se o API Gateway estiver configurado para rotear tudo para o Lambda,
+ * e o Express estiver ouvindo em /api/trpc, a URL deve refletir isso.
+ * 
+ * Se o API Gateway já tiver um prefixo (ex: /prod), ele deve estar na VITE_API_BASE_URL.
+ */
 const getBaseUrl = () => {
   let url = import.meta.env.VITE_API_BASE_URL || "";
   
-  // Se a URL não termina com /api/trpc, mas termina com o domínio, adicionamos o prefixo
-  if (url && !url.includes("/api/trpc")) {
-    // Remove barra final se existir
-    url = url.replace(/\/$/, "");
-    url = `${url}/api/trpc`;
+  if (!url) return "";
+
+  // Remove barra final
+  url = url.replace(/\/$/, "");
+
+  // Se a URL já contém /api/trpc, retornamos como está
+  if (url.includes("/api/trpc")) {
+    return url;
   }
-  
-  return url;
+
+  // Caso contrário, adicionamos o sufixo padrão do projeto
+  return `${url}/api/trpc`;
 };
 
 createRoot(document.getElementById("root")!).render(
@@ -59,7 +69,6 @@ createRoot(document.getElementById("root")!).render(
           links: [
             httpBatchLink({
               url: getBaseUrl(),
-              // Força o envio de cookies em requisições cross-origin
               fetch(url, options) {
                 return fetch(url, {
                   ...options,
