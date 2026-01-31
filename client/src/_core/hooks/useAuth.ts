@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useAuth as useOidcAuth } from "react-oidc-context";
 
 type User = {
   id: string;
@@ -13,38 +14,33 @@ type UseAuthOptions = {
 
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = "/login" } = options ?? {};
-  
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("jarvis_user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  const [loading, setLoading] = useState(false);
+  const auth = useOidcAuth();
+
+  const user = useMemo(() => {
+    if (!auth.isAuthenticated || !auth.user) return null;
+    return {
+      id: auth.user.profile.sub || "",
+      name: auth.user.profile.name || auth.user.profile.preferred_username || auth.user.profile.email || "Usuário",
+      email: auth.user.profile.email || "",
+    } as User;
+  }, [auth.isAuthenticated, auth.user]);
 
   const logout = useCallback(async () => {
-    localStorage.removeItem("jarvis_access_token");
-    localStorage.removeItem("jarvis_id_token");
-    localStorage.removeItem("jarvis_refresh_token");
-    localStorage.removeItem("jarvis_user");
-    setUser(null);
-    window.location.href = "/login";
-  }, []);
+    // Limpa o cookie de sessão do servidor via chamada tRPC ou manualmente
+    // Para simplificar no MVP, apenas removemos o estado local e redirecionamos
+    auth.removeUser();
+    window.location.href = redirectPath;
+  }, [auth, redirectPath]);
 
-  const isAuthenticated = useMemo(() => !!user, [user]);
-
-  useEffect(() => {
-    if (redirectOnUnauthenticated && !loading && !isAuthenticated) {
-      if (window.location.pathname !== redirectPath) {
-        window.location.href = redirectPath;
-      }
-    }
-  }, [redirectOnUnauthenticated, redirectPath, loading, isAuthenticated]);
+  const isAuthenticated = auth.isAuthenticated;
+  const loading = auth.isLoading;
 
   return {
     user,
     loading,
-    error: null,
+    error: auth.error,
     isAuthenticated,
     logout,
-    refresh: () => {}, // No-op para o MVP
+    refresh: () => auth.signinSilent(),
   };
 }
