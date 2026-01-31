@@ -1,33 +1,22 @@
-# Correções de Autenticação e Renderização - Jarvis 2.0 MVP
+# Correções de Autenticação e Comunicação - Jarvis 2.0 MVP
 
-## Problemas Identificados
-1.  **Fantasmas do LocalStorage:** O hook `useAuth` original dependia exclusivamente de chaves no `localStorage` (`jarvis_user`, `jarvis_access_token`), que não eram preenchidas pelo fluxo `react-oidc-context`.
-2.  **Redirecionamento Infinito/Bloqueio:** O `DashboardLayout` tentava redirecionar para `/login` se o `user` (do `localStorage`) estivesse vazio, ignorando o estado real de autenticação do OIDC.
-3.  **Código de Teste no App.tsx:** O arquivo `App.tsx` continha um retorno antecipado de "Autenticação Confirmada!", o que impedia a renderização das rotas reais (`Kanban`, etc.) após o login.
+## Problemas Resolvidos
 
-## Correções Implementadas
-1.  **Novo Hook `useAuth`:** Agora o hook utiliza o estado do `react-oidc-context` para determinar se o usuário está autenticado e extrai os dados do perfil diretamente do token ID da AWS Cognito.
-2.  **Roteamento Corrigido no `App.tsx`:** Removido o código de teste. Agora, se `auth.isAuthenticated` for verdadeiro, ele renderiza o `DashboardLayout` com o `Switch` de rotas.
-3.  **Limpeza no `DashboardLayout`:** Removida a lógica de redirecionamento manual que conflitava com o OIDC. Agora ele apenas consome o estado de autenticação garantido pelo `App.tsx`.
-4.  **Resiliência no `Kanban`:** Adicionado tratamento de erro e carregamento mais suave no componente Kanban para evitar que falhas no tRPC causem tela branca.
+### 1. Renderização de Tela Branca após Login
+- **Causa:** O `App.tsx` continha um código de teste que bloqueava as rotas reais, e o `useAuth` dependia de dados inexistentes no `localStorage`.
+- **Solução:** O hook `useAuth` foi refatorado para usar o estado do `react-oidc-context`. O roteamento no `App.tsx` agora renderiza corretamente os componentes após a confirmação da autenticação.
+
+### 2. Erro "Failed to fetch" (tRPC 404)
+- **Causa:** A URL da API configurada no cliente estava incompleta (faltando o prefixo `/api/trpc`) e as requisições não enviavam cookies de sessão para o domínio da AWS.
+- **Solução:** 
+  - Implementada a função `getBaseUrl()` no `main.tsx` para garantir que a URL sempre contenha o sufixo `/api/trpc`.
+  - Configurado `credentials: 'include'` no cliente tRPC para permitir o envio do cookie `app_session_id` em chamadas cross-origin.
+
+### 3. Resiliência do Kanban
+- **Solução:** Adicionado tratamento de erro visual no componente `Kanban.tsx` com botão de "Tentar Novamente", evitando que falhas de rede travem a interface do usuário.
 
 ## Como Validar
-1.  Realize o login via portal Cognito.
-2.  O `App.tsx` detectará a autenticação via OIDC.
-3.  O `DashboardLayout` será renderizado, e o `Kanban` buscará os dados via tRPC.
-4.  Não deve haver mais dependência de `localStorage` para a renderização inicial.
-
-## Atualização: Correção do Erro "Failed to fetch" (tRPC 404/CORS)
-
-### Problema Identificado
-As chamadas tRPC estavam falhando com `404` ou `Failed to fetch` ao tentar acessar o endpoint da API na AWS. Isso ocorria porque:
-1.  **Falta de Credenciais:** O cliente tRPC não estava configurado para enviar cookies de sessão (`credentials: 'include'`), o que é essencial para que o servidor identifique o usuário em requisições cross-origin (Vercel -> AWS).
-2.  **Configuração de URL:** A URL da API precisa ser absoluta e estar corretamente apontada para o endpoint do tRPC.
-
-### Correções Implementadas
-1.  **Configuração do Cliente tRPC:** No `main.tsx`, o `httpBatchLink` foi atualizado para incluir `credentials: 'include'` na função `fetch`. Isso garante que o cookie `app_session_id` seja enviado em todas as requisições para a API.
-2.  **Melhoria na Resiliência:** O componente `Kanban.tsx` já havia sido atualizado para tratar estados de erro, permitindo que o usuário tente novamente em caso de falha temporária.
-
-### Como Validar
-1.  Após o login, verifique no DevTools do navegador (aba Network) se as requisições para `/api/trpc/...` agora incluem o cabeçalho `Cookie` com o token de sessão.
-2.  O status da resposta deve ser `200 OK` em vez de `404` ou erro de rede.
+1. Acesse [https://jarvis-2-0-mvp-ardl.vercel.app/](https://jarvis-2-0-mvp-ardl.vercel.app/).
+2. Realize o login via Cognito.
+3. O sistema deve carregar o Kanban automaticamente.
+4. No DevTools (Network), verifique se as chamadas tRPC estão indo para `.../api/trpc/tasks.list` com status `200`.

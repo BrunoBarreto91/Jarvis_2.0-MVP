@@ -33,6 +33,20 @@ const onSigninError = (error: any): void => {
 
 const queryClient = new QueryClient();
 
+// Função para garantir que a URL da API esteja correta
+const getBaseUrl = () => {
+  let url = import.meta.env.VITE_API_BASE_URL || "";
+  
+  // Se a URL não termina com /api/trpc, mas termina com o domínio, adicionamos o prefixo
+  if (url && !url.includes("/api/trpc")) {
+    // Remove barra final se existir
+    url = url.replace(/\/$/, "");
+    url = `${url}/api/trpc`;
+  }
+  
+  return url;
+};
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider
@@ -44,14 +58,7 @@ createRoot(document.getElementById("root")!).render(
         client={trpc.createClient({
           links: [
             httpBatchLink({
-              url: import.meta.env.VITE_API_BASE_URL,
-              // Adiciona suporte a cookies/sessão para chamadas entre domínios (Vercel -> AWS)
-              headers() {
-                return {
-                  // O navegador enviará cookies automaticamente se withCredentials estiver ativo no fetch subjacente
-                  // tRPC httpBatchLink usa fetch por padrão.
-                };
-              },
+              url: getBaseUrl(),
               // Força o envio de cookies em requisições cross-origin
               fetch(url, options) {
                 return fetch(url, {
