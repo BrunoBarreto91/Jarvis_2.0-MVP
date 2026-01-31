@@ -47,8 +47,9 @@ function TRPCProvider({ children }: { children: React.ReactNode }) {
           fetch(url, options) {
             let targetUrl = url.toString();
             
+            console.log("[DEBUG] tRPC Original URL:", targetUrl);
+
             // Mapeamento de rotas tRPC -> API Gateway REST
-            // O tRPC concatena o nome do procedimento na URL
             if (targetUrl.includes('tasks.list')) {
                 targetUrl = targetUrl.replace('tasks.list', 'tasks');
             } else if (targetUrl.includes('tasks.create')) {
@@ -57,6 +58,8 @@ function TRPCProvider({ children }: { children: React.ReactNode }) {
                 targetUrl = targetUrl.replace('tasks.update', 'tasks');
             }
             
+            console.log("[DEBUG] tRPC Target URL:", targetUrl);
+
             const headers = {
               ...options.headers,
             } as Record<string, string>;
@@ -64,6 +67,9 @@ function TRPCProvider({ children }: { children: React.ReactNode }) {
             // Injeta o token JWT se o usuário estiver autenticado
             if (auth.user?.id_token) {
               headers["Authorization"] = auth.user.id_token;
+              console.log("[DEBUG] JWT Token Presente");
+            } else {
+              console.warn("[DEBUG] JWT Token Ausente!");
             }
 
             return fetch(targetUrl, {
