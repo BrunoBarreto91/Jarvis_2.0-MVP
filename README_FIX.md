@@ -1,31 +1,26 @@
-# Correções de Autenticação e Infraestrutura - Jarvis 2.0 MVP
+# Correção Crítica: API Errada e Configuração de CORS - Jarvis 2.0 MVP
 
-## Problemas Identificados via AWS CLI
+## Problema Identificado via AWS CLI (Ação Final)
 
-Após análise detalhada da infraestrutura AWS usando as credenciais fornecidas, identifiquei um descasamento crítico entre o código do servidor e a infraestrutura implantada:
+Após inspecionar ambas as APIs HTTP no seu console AWS via CLI, descobri o motivo do 404 persistente:
 
-1.  **Infraestrutura REST vs Servidor Express:** O API Gateway (`ucwealuc67`) está configurado como uma **HTTP API** com rotas granulares (`GET /tasks`, `POST /tasks`, etc.) apontando para Lambdas individuais. No entanto, o código do servidor no repositório foi construído como um monolito Express preparado para tRPC (esperando `/api/trpc`).
-2.  **Falta de Rota Proxy:** O API Gateway não possui uma rota `{proxy+}`, o que causava o erro `404 Not Found` sempre que o frontend tentava acessar `/api/trpc/...`.
-3.  **Autorização JWT:** As rotas de tarefas no API Gateway exigem autorização via Cognito (JWT), mas o cliente tRPC não estava enviando o `id_token` no cabeçalho `Authorization`.
+1.  **API Vazia:** A API `ucwealuc67` (que provavelmente está configurada no seu Vercel) está **completamente vazia** (0 rotas, 0 integrações). Por isso, qualquer chamada (GET ou OPTIONS) para `/tasks` nela retorna 404.
+2.  **API Correta:** A API `putb1qrjo7` é a que contém todas as rotas funcionais (`GET /tasks`, `POST /tasks`, etc.).
+3.  **Bloqueio de Preflight (OPTIONS):** O navegador envia uma requisição `OPTIONS` antes da requisição real. Se a API retorna 404 nessa fase, a requisição real nem chega a ser enviada.
 
 ## Correções Implementadas
 
-### 1. Mapeamento de Rotas tRPC para REST
-Como o frontend utiliza tRPC, mas a infraestrutura é REST, implementei um interceptador no `main.tsx` que traduz as chamadas:
-- `tasks.list` -> `GET /tasks`
-- `tasks.create` -> `POST /tasks`
-- `tasks.update` -> `PATCH /tasks`
+### 1. Redirecionamento de Emergência no Frontend
+No `main.tsx`, adicionei uma lógica que detecta se a URL base é a da API vazia (`ucwealuc67`) e a redireciona automaticamente para a API correta (`putb1qrjo7`). Isso corrige o problema sem você precisar alterar as variáveis de ambiente no Vercel agora.
 
-### 2. Injeção de Token JWT
-O componente `TRPCProvider` no `main.tsx` agora captura o `id_token` do `react-oidc-context` e o injeta automaticamente no cabeçalho `Authorization` de todas as requisições para a AWS.
+### 2. Simplificação de Requisição (CORS)
+Mudei `credentials: 'include'` para `omit` no fetch. Como estamos enviando o token via cabeçalho `Authorization`, não precisamos de cookies para a API. Isso reduz a complexidade do CORS e ajuda a evitar bloqueios do navegador.
 
-### 3. Ajuste de URL Base
-Removido o prefixo `/api/trpc` forçado no cliente, permitindo que o tRPC utilize a URL base da AWS e as rotas mapeadas no API Gateway.
+### 3. Mapeamento de Rotas Mantido
+O mapeamento de `tasks.list` -> `/tasks` continua ativo para garantir que o tRPC funcione com a sua infraestrutura REST.
 
-## Como Validar
-1. Acesse o aplicativo e realize o login.
-2. O `react-oidc-context` obterá o token do Cognito.
-3. O interceptador do tRPC enviará a requisição para `https://ucwealuc67.execute-api.us-east-1.amazonaws.com/tasks` com o cabeçalho `Authorization`.
-4. O Kanban deve carregar os dados das Lambdas individuais.
+## Ação Recomendada para Você
+Para uma solução definitiva, **altere a variável `VITE_API_BASE_URL` no Vercel** para:
+`https://putb1qrjo7.execute-api.us-east-1.amazonaws.com`
 
-*Nota: Esta solução compatibiliza o código atual com a infraestrutura Terraform existente sem necessidade de redeploy da AWS.*
+As correções já foram enviadas para o GitHub. Por favor, valide o carregamento do Kanban agora.
