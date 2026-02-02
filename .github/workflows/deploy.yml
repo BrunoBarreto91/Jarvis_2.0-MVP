@@ -1,11 +1,36 @@
-name: Deploy Jarvis UI to S3
+name: Deploy Jarvis Full Stack
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  # --- JOB 1: INFRAESTRUTURA E BACKEND (O CÉREBRO) ---
+  terraform-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Jarvis_Server/jarvis-serverless
+    env:
+      TF_VAR_admin_setup_key: ${{ secrets.ADMIN_SETUP_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: 'us-east-1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+  # --- JOB 2: INTERFACE (O CORPO) ---
+  build-and-deploy-ui:
+    needs: terraform-backend # Só faz o front se o back estiver ok
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,16 +47,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Inject API URL
-        run: sed -i 's|/api/trpc|https://ucwealuc67.execute-api.us-east-1.amazonaws.com/api/trpc|g' client/src/main.tsx
-
       - name: Build
         run: pnpm run build
         env:
           VITE_APP_TITLE: "Jarvis 2.0"
-          VITE_APP_ID: "jarvis-app"
-          VITE_OAUTH_PORTAL_URL: "https://manus.im"
           VITE_API_BASE_URL: "https://ucwealuc67.execute-api.us-east-1.amazonaws.com"
+          # Adicionada a chave aqui também caso o front precise enviá-la
+          VITE_ADMIN_SETUP_KEY: ${{ secrets.ADMIN_SETUP_KEY }}
 
       - name: Deploy to S3
         uses: jakejarvis/s3-sync-action@master

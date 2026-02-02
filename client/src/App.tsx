@@ -1,4 +1,4 @@
-﻿import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
@@ -16,12 +16,6 @@ import { Button } from "@/components/ui/button";
 
 function Router() {
   const auth = useAuth();
-
-  // Log de depuração essencial
-  console.log("Jarvis Auth State:", {
-    isLoading: auth.isLoading,
-    isAuthenticated: auth.isAuthenticated
-  });
 
   // 1. Estado de carregamento: evita o loop de redirecionamento
   if (auth.isLoading) {
@@ -45,21 +39,21 @@ function Router() {
   }
 
   // 3. Se NÃO estiver autenticado, renderiza a tela de Login
-  // O OIDC cuidará de redirecionar para a AWS ao clicar no botão de login
   if (!auth.isAuthenticated) {
     return <Login />;
   }
 
-  // 4. Teste de isolamento total
+  // 4. Se autenticado, renderiza as rotas dentro do DashboardLayout
   return (
-    <div style={{ padding: '50px', background: 'white', color: 'black', minHeight: '100vh', zIndex: 9999 }}>
-      <h1>Autenticação Confirmada!</h1>
-      <p>Se você está vendo isso, a autenticação OIDC está 100% ok.</p>
-      <p>O problema é o componente DashboardLayout ou Kanban.</p>
-      <button onClick={() => console.log("Dados do usuário:", auth.user)}>
-        Ver dados no Console
-      </button>
-    </div>
+    <DashboardLayout>
+      <Switch>
+        <Route path="/" component={Kanban} />
+        <Route path="/lista-prazo" component={ListaPrazo} />
+        <Route path="/bloqueadores" component={Bloqueadores} />
+        <Route path="/exportar" component={Exportar} />
+        <Route component={NotFound} />
+      </Switch>
+    </DashboardLayout>
   );
 }
 

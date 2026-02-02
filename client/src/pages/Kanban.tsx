@@ -41,7 +41,10 @@ export default function Kanban() {
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
 
-  const { data: tasks, isLoading, refetch } = trpc.tasks.list.useQuery({});
+  const { data: tasks, isLoading, refetch, error } = trpc.tasks.list.useQuery({}, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
   const updateTask = trpc.tasks.update.useMutation({
     onSuccess: () => {
       refetch();
@@ -101,8 +104,18 @@ export default function Kanban() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] p-4 text-center">
+        <p className="text-destructive font-medium">Erro ao carregar tarefas</p>
+        <p className="text-sm text-muted-foreground">{error.message}</p>
+        <Button variant="outline" className="mt-4" onClick={() => refetch()}>Tentar Novamente</Button>
       </div>
     );
   }
