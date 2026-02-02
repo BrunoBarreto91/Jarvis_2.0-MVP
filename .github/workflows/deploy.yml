@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Jarvis_Server/jarvis-serverless
+        working-directory: ./Jarvis_Server_backend/jarvis-serverless
     env:
       TF_VAR_admin_setup_key: ${{ secrets.ADMIN_SETUP_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
