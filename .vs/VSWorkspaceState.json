@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\server",
+    "\\server\\src",
+    "\\server\\src\\lambdas",
+    "\\server\\src\\lambdas\\system",
+    "\\server\\src\\lambdas\\system\\setup"
+  ],
+  "SelectedNode": "\\server\\src\\lambdas\\system\\setup\\index.js",
+  "PreviewInSolutionExplorer": false
+}
