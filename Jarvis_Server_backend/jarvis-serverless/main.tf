@@ -2,6 +2,14 @@
 # PROJETO: JARVIS - ASSISTENTE INTELIGENTE (SERVERLESS)
 # IaC: TERRAFORM - VERSÃO FINAL BLINDADA
 # ==============================================================================
+# --- CONTROLE DE ESTADO ---
+terraform {
+  backend "s3" {
+    bucket = "jarvis-terraform-state-bruno" # O nome que você criou
+    key    = "backend/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
 
 # --- 0. VARIÁVEIS SENSÍVEIS ---
 variable "db_password" {
