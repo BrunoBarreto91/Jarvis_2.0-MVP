@@ -1,3 +1,14 @@
+steps:
+      - uses: actions/checkout@v4
+
+      - name: Raio-X do Diretório
+        run: |
+          echo "Onde estou:"
+          pwd
+          echo "O que eu vejo aqui:"
+          ls -F
+          echo "Procurando o caminho do Terraform:"
+          find . -name "main.tf"
 name: Deploy Jarvis Full Stack
 
 on:
