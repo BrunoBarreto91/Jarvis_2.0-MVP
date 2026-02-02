@@ -382,3 +382,5 @@ resource "aws_lambda_permission" "apigw_lambda" {
 output "base_url" {
   value = aws_apigatewayv2_api.jarvis_api.api_endpoint
 }
+
+# Trigger manual para sincronizacao de estado
