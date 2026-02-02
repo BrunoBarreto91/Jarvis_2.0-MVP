@@ -15,6 +15,9 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: 'us-east-1'
     steps:
+      - name: Quem sou eu na AWS?
+        run: aws sts get-caller-identity
+        
       - name: Checkout Code
         uses: actions/checkout@v4
 
