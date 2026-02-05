@@ -1,311 +1,181 @@
-# ==============================================================================
-# PROJETO: JARVIS - ASSISTENTE INTELIGENTE (SERVERLESS)
-# IaC: TERRAFORM - VERSÃO FINAL BLINDADA (ESTÁGIO FINAL)
-# ==============================================================================
+# --- 1. CONFIGURAÇÃO DE BACKEND E PROVIDER ---
 
-# --- CONTROLE DE ESTADO ---
 terraform {
+  # O estado será armazenado no seu bucket existente
   backend "s3" {
     bucket = "jarvis-terraform-state-bruno"
-    key    = "backend/terraform.tfstate"
+    key    = "jarvis/server/terraform.tfstate"
     region = "us-east-1"
   }
-}
-
-# --- 0. VARIÁVEIS SENSÍVEIS ---
-variable "db_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "admin_setup_key" {
-  type      = string
-  sensitive = true
-}
-
-# --- 1. PROVEDOR E TAGS GLOBAIS ---
-provider "aws" {
-  region = "us-east-1"
-  default_tags {
-    tags = {
-      Project   = "Jarvis"
-      ManagedBy = "Terraform"
-      Owner     = "Bruno Barreto"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0" # ATUALIZADO: Para alinhar com a versão 6.27.0 do seu ambiente
     }
   }
 }
 
-# --- 2. CRIPTOGRAFIA E SEGREDOS ---
-resource "aws_kms_key" "jarvis_kms" {
-  description             = "Chave mestra para os segredos do Bunker Jarvis"
-  enable_key_rotation     = true
-  lifecycle { prevent_destroy = true }
+provider "aws" {
+  region = var.aws_region
 }
 
-resource "aws_secretsmanager_secret" "db_credentials" {
-  name       = "jarvis/rds/credentials-final-v3"
-  kms_key_id = aws_kms_key.jarvis_kms.arn
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes  = all
+# --- 2. VARIÁVEIS ---
+
+variable "aws_region" { default = "us-east-1" }
+variable "my_ip" { description = "Seu IP Público (x.x.x.x/32)" }
+variable "ssh_key_name" { default = "jarvis-key" }
+variable "n8n_user" { default = "admin" }
+variable "n8n_pass" { sensitive = true }
+variable "admin_setup_key" { sensitive = true }
+
+# --- 3. DATA SOURCES (MAPEAR FOTOGRAFIA ATUAL DA AWS) ---
+
+# VPC Identificada: vpc-0f43147f2f69aad12
+data "aws_vpc" "existing_vpc" {
+  id = "vpc-0f43147f2f69aad12"
+}
+
+# Subnet Pública: subnet-070c4e0af2d70dc80 (Onde o n8n vai morar)
+data "aws_subnet" "public_subnet" {
+  id = "subnet-070c4e0af2d70dc80"
+}
+
+# Subnet Privada: subnet-0693a8835e5c46571 (Referência para segurança)
+data "aws_subnet" "private_subnet" {
+  id = "subnet-0693a8835e5c46571"
+}
+
+# Security Group Atual: sg-098b15ea36d6387bc
+data "aws_security_group" "existing_sg" {
+  id = "sg-098b15ea36d6387bc"
+}
+
+# Busca a imagem Ubuntu 22.04 mais recente
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"]
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 }
 
-resource "aws_secretsmanager_secret_version" "db_credentials_val" {
-  secret_id     = aws_secretsmanager_secret.db_credentials.id
-  secret_string = jsonencode({
-    username = "admin"
-    password = var.db_password
-  })
-}
+# --- 4. NOVOS RECURSOS (ORQUESTRADOR N8N) ---
 
-# --- 3. REDE (VPC E CONECTIVIDADE) ---
-resource "aws_vpc" "jarvis_vpc" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-  lifecycle { prevent_destroy = true }
-}
+# Criar um novo SG para o n8n para não poluir o antigo
+resource "aws_security_group" "n8n_sg" {
+  name        = "jarvis-n8n-sg"
+  description = "Security Group para o orquestrador n8n"
+  vpc_id      = data.aws_vpc.existing_vpc.id
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.jarvis_vpc.id
-}
+  # SSH (Apenas para o seu IP)
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
 
-resource "aws_subnet" "public_1" {
-  vpc_id                  = aws_vpc.jarvis_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = "us-east-1a"
-}
+  # Porta do n8n (Webhooks e Interface)
+  ingress {
+    from_port   = 5678
+    to_port     = 5678
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-resource "aws_subnet" "private_1" {
-  vpc_id            = aws_vpc.jarvis_vpc.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "us-east-1a"
-  lifecycle { prevent_destroy = true }
-}
-
-resource "aws_subnet" "private_2" {
-  vpc_id            = aws_vpc.jarvis_vpc.id
-  cidr_block        = "10.0.3.0/24"
-  availability_zone = "us-east-1b"
-  lifecycle { prevent_destroy = true }
-}
-
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.jarvis_vpc.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-resource "aws_route_table_association" "public_assoc" {
-  subnet_id      = aws_subnet.public_1.id
-  route_table_id = aws_route_table.public_rt.id
+# CONEXÃO COM O BANCO: Permite que o n8n fale com o RDS no SG antigo
+resource "aws_security_group_rule" "allow_n8n_to_rds" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.n8n_sg.id
+  security_group_id        = data.aws_security_group.existing_sg.id
+  description              = "Acesso do n8n ao banco legado"
 }
 
-# --- 4. SEGURANÇA (SGs) ---
-resource "aws_security_group" "lambda_sg_v2" {
-  name   = "jarvis-lambda-sg-v2"
-  vpc_id = aws_vpc.jarvis_vpc.id
-  lifecycle { ignore_changes = all }
-}
-
-resource "aws_security_group" "rds_sg" {
-  name   = "jarvis-rds-sg"
-  vpc_id = aws_vpc.jarvis_vpc.id
-  lifecycle { ignore_changes = all }
-}
-
-# --- 6. BANCO DE DADOS (RDS) ---
-resource "aws_db_subnet_group" "jarvis_db_group" {
-  name       = "jarvis-db-group-v2"
-  subnet_ids = [aws_subnet.private_1.id, aws_subnet.private_2.id]
-  lifecycle { ignore_changes = all }
-}
-
-resource "aws_db_instance" "jarvis_db" {
-  allocated_storage      = 20
-  engine                 = "mysql"
-  engine_version         = "8.0"
-  instance_class         = "db.t3.micro"
-  db_name                = "jarvis_db"
-  username               = "admin"
-  password               = var.db_password
-  parameter_group_name   = "default.mysql8.0"
-  skip_final_snapshot    = true
-  db_subnet_group_name   = aws_db_subnet_group.jarvis_db_group.name
-  vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  lifecycle {
-    prevent_destroy = true
-    ignore_changes  = all
-  }
-}
-
-# --- 7. COGNITO ---
-resource "aws_cognito_user_pool" "jarvis_user_pool" {
-  name                     = "User pool - Jarvis - Vercel"
-  lifecycle { ignore_changes = all }
-}
-
-resource "aws_cognito_user_pool_client" "jarvis_client" {
-  name                = "jarvis-client"
-  user_pool_id        = aws_cognito_user_pool.jarvis_user_pool.id
-}
-
-# --- 8. IAM ---
-resource "aws_iam_role" "lambda_exec_role" {
-  name = "jarvis-lambda-exec-role"
+# IAM Role para a Instância EC2 do n8n
+resource "aws_iam_role" "n8n_ec2_role" {
+  name = "jarvis-n8n-ec2-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Action = "sts:AssumeRole"
       Effect = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
+      Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
-  lifecycle { ignore_changes = all }
 }
 
-resource "aws_iam_policy" "jarvis_combined_policy" {
-  name = "JarvisCombinedPolicy"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      { Action = "bedrock:InvokeModel", Effect = "Allow", Resource = "*" },
-      { Action = "lambda:InvokeFunction", Effect = "Allow", Resource = "*" },
-      { Action = ["secretsmanager:GetSecretValue", "kms:Decrypt"], Effect = "Allow", Resource = "*" }
-    ]
-  })
-  lifecycle { ignore_changes = all }
+resource "aws_iam_instance_profile" "n8n_profile" {
+  name = "jarvis-n8n-profile"
+  role = aws_iam_role.n8n_ec2_role.name
 }
 
-# --- 9. LAMBDAS NODE.JS ---
-data "archive_file" "common_layer_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/src/lambdas/common"
-  output_path = "${path.module}/common_layer.zip"
+# Instância EC2 do n8n
+resource "aws_instance" "n8n_server" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.micro"
+  subnet_id     = data.aws_subnet.public_subnet.id
+
+  vpc_security_group_ids = [aws_security_group.n8n_sg.id]
+  key_name               = var.ssh_key_name
+  iam_instance_profile   = aws_iam_instance_profile.n8n_profile.name
+
+  user_data = <<-EOF
+              #!/bin/bash
+              apt-get update
+              apt-get install -y docker.io docker-compose-plugin
+              systemctl start docker
+              systemctl enable docker
+
+              TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+              PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/public-ipv4)
+
+              mkdir -p /home/ubuntu/n8n
+              cat <<EOT >> /home/ubuntu/n8n/docker-compose.yml
+              version: '3.8'
+              services:
+                n8n:
+                  image: n8nio/n8n:latest
+                  ports:
+                    - "5678:5678"
+                  environment:
+                    - N8N_BASIC_AUTH_ACTIVE=true
+                    - N8N_BASIC_AUTH_USER=${var.n8n_user}
+                    - N8N_BASIC_AUTH_PASSWORD=${var.n8n_pass}
+                    - WEBHOOK_URL=http://\$PUBLIC_IP:5678/
+                  volumes:
+                    - n8n_data:/home/node/.n8n
+                  restart: always
+              volumes:
+                n8n_data:
+              EOT
+
+              cd /home/ubuntu/n8n
+              docker compose up -d
+              EOF
+
+  tags = { Name = "jarvis-n8n-server" }
 }
 
-resource "aws_lambda_layer_version" "jarvis_utils" {
-  filename            = data.archive_file.common_layer_zip.output_path
-  layer_name          = "jarvis-utils"
-  compatible_runtimes = ["nodejs18.x"]
+# Elastic IP para manter a URL fixa
+resource "aws_eip" "n8n_eip" {
+  instance = aws_instance.n8n_server.id
+  domain   = "vpc"
 }
 
-locals {
-  functions = {
-    health = { dir = "system/health", timeout = 15, memory = 256 }
-    setup  = { dir = "system/setup",  timeout = 30, memory = 512 }
-    create = { dir = "tasks/create",  timeout = 29, memory = 512 }
-    get    = { dir = "tasks/get",     timeout = 20, memory = 256 }
-    update = { dir = "tasks/update",  timeout = 15, memory = 256 }
-  }
-}
+# --- 5. OUTPUTS ---
 
-resource "aws_lambda_function" "jarvis_functions" {
-  for_each      = local.functions
-  function_name = "jarvis-${each.key}"
-  role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "index.handler"
-  runtime       = "nodejs18.x"
-  timeout       = each.value.timeout
-  memory_size   = each.value.memory
-  filename      = "${path.module}/${each.key}_lambda.zip"
-  layers        = [aws_lambda_layer_version.jarvis_utils.arn]
-
-  vpc_config {
-    subnet_ids         = [aws_subnet.public_1.id]
-    security_group_ids = [aws_security_group.lambda_sg_v2.id]
-  }
-
-  environment {
-    variables = {
-      DB_HOST             = aws_db_instance.jarvis_db.address
-      DB_NAME             = "jarvis_db"
-      DB_SECRET_ARN       = aws_secretsmanager_secret.db_credentials.arn
-      ADMIN_SETUP_KEY     = var.admin_setup_key
-      BRAIN_FUNCTION_NAME = "jarvis-brain"
-    }
-  }
-}
-
-# --- 10. JARVIS BRAIN (PYTHON) ---
-resource "aws_lambda_function" "jarvis_brain" {
-  function_name = "jarvis-brain"
-  role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "handler.lambda_handler"
-  runtime       = "python3.12"
-  timeout       = 90
-  memory_size   = 512
-
-  # Removido filename e zip local para não travar o deploy se o arquivo não estiver pronto
-  # Em produção, o GitHub Actions cuidará do deploy do código
-  s3_bucket = "jarvis-terraform-state-bruno"
-  s3_key    = "lambdas/brain.zip"
-
-  vpc_config {
-    subnet_ids         = [aws_subnet.private_1.id]
-    security_group_ids = [aws_security_group.lambda_sg_v2.id]
-  }
-}
-
-# --- 11. API GATEWAY ---
-resource "aws_apigatewayv2_api" "jarvis_api" {
-  name          = "jarvis-api-production"
-  protocol_type = "HTTP"
-  lifecycle { ignore_changes = all }
-}
-
-resource "aws_apigatewayv2_stage" "jarvis_stage" {
-  api_id      = aws_apigatewayv2_api.jarvis_api.id
-  name        = "$default"
-  auto_deploy = true
-}
-
-resource "aws_apigatewayv2_authorizer" "cognito_auth" {
-  api_id           = aws_apigatewayv2_api.jarvis_api.id
-  authorizer_type  = "JWT"
-  identity_sources = ["$request.header.Authorization"]
-  name             = "jarvis-auth"
-  jwt_configuration {
-    audience = [aws_cognito_user_pool_client.jarvis_client.id]
-    issuer   = "https://${aws_cognito_user_pool.jarvis_user_pool.endpoint}"
-  }
-}
-
-resource "aws_apigatewayv2_integration" "jarvis_integrations" {
-  for_each               = local.functions
-  api_id                 = aws_apigatewayv2_api.jarvis_api.id
-  integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.jarvis_functions[each.key].invoke_arn
-  payload_format_version = "2.0"
-}
-
-resource "aws_apigatewayv2_route" "routes" {
-  for_each = {
-    health = "GET /health"
-    setup  = "GET /setup"
-    create = "POST /tasks"
-    get    = "GET /tasks"
-    update = "PATCH /tasks"
-  }
-  api_id             = aws_apigatewayv2_api.jarvis_api.id
-  route_key          = each.value
-  target             = "integrations/${aws_apigatewayv2_integration.jarvis_integrations[each.key].id}"
-  authorization_type = contains(["POST /tasks", "GET /tasks", "PATCH /tasks"], each.value) ? "JWT" : "NONE"
-  authorizer_id      = contains(["POST /tasks", "GET /tasks", "PATCH /tasks"], each.value) ? aws_apigatewayv2_authorizer.cognito_auth.id : null
-}
-
-resource "aws_lambda_permission" "apigw_lambda" {
-  for_each      = local.functions
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.jarvis_functions[each.key].function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.jarvis_api.execution_arn}/*/*"
-}
-
-output "base_url" {
-  value = aws_apigatewayv2_api.jarvis_api.api_endpoint
+output "n8n_url" {
+  value = "http://${aws_eip.n8n_eip.public_ip}:5678"
 }
