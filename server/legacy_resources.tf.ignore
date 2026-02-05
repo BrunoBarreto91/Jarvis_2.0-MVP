@@ -1,0 +1,76 @@
+# ==============================================================================
+# 🏛️ ARQUIVO DE LEGADO - PROJETO JARVIS POC
+# Este arquivo contém recursos que foram provisionados na Fase 1 (Serverless)
+# e que continuam ativos na AWS, mas foram removidos da gestão do Terraform
+# para dar lugar à arquitetura do n8n.
+#
+# NÃO REMOVA A EXTENSÃO .ignore
+# ==============================================================================
+
+# --- IAM Roles para Lambdas ---
+resource "aws_iam_role" "lambda_exec_role" {
+  name = "jarvis-lambda-exec-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{ Action = "sts:AssumeRole", Effect = "Allow", Principal = { Service = "lambda.amazonaws.com" } }]
+  })
+}
+
+resource "aws_iam_policy" "jarvis_combined_policy" {
+  name = "JarvisCombinedPolicy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{ Action = ["bedrock:InvokeModel", "lambda:InvokeFunction", "secretsmanager:GetSecretValue", "kms:Decrypt"], Effect = "Allow", Resource = "*" }]
+  })
+}
+
+# --- Lambda Layer ---
+resource "aws_lambda_layer_version" "jarvis_utils" {
+  filename            = "./common_layer.zip"
+  layer_name          = "jarvis-utils"
+  compatible_runtimes = ["nodejs18.x"]
+}
+
+# --- Funções Lambda (CRUD e Brain) ---
+resource "aws_lambda_function" "jarvis_functions" {
+  for_each      = toset(["create", "get", "update", "setup", "health"])
+  function_name = "jarvis-${each.key}"
+  role          = aws_iam_role.lambda_exec_role.arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  filename      = "./${each.key}_lambda.zip"
+}
+
+resource "aws_lambda_function" "jarvis_brain" {
+  function_name = "jarvis-brain"
+  role          = aws_iam_role.lambda_exec_role.arn
+  handler       = "handler.lambda_handler"
+  runtime       = "python3.12"
+  filename      = "./jarvis_brain.zip"
+}
+
+# --- VPC Endpoints (Conectividade Privada) ---
+resource "aws_security_group" "vpc_endpoints_sg" {
+  name        = "jarvis-vpc-endpoints-sg"
+  description = "Permite trafego interno para APIs da AWS"
+  vpc_id      = "vpc-0f43147f2f69aad12" # ID Fixo legado
+  ingress { from_port = 443; to_port = 443; protocol = "tcp"; cidr_blocks = ["10.0.0.0/16"] }
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id            = "vpc-0f43147f2f69aad12"
+  service_name      = "com.amazonaws.us-east-1.secretsmanager"
+  vpc_endpoint_type = "Interface"
+}
+
+resource "aws_vpc_endpoint" "lambda" {
+  vpc_id            = "vpc-0f43147f2f69aad12"
+  service_name      = "com.amazonaws.us-east-1.lambda"
+  vpc_endpoint_type = "Interface"
+}
+
+resource "aws_vpc_endpoint" "bedrock_runtime" {
+  vpc_id            = "vpc-0f43147f2f69aad12"
+  service_name      = "com.amazonaws.us-east-1.bedrock-runtime"
+  vpc_endpoint_type = "Interface"
+}
