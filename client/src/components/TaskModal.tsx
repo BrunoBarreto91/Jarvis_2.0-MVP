@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { jarvisApi } from "../lib/services/jarvis"; // Importando nossa ponte nova
 import {
   Dialog,
   DialogContent,
@@ -35,13 +36,14 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
   const [naturalInput, setNaturalInput] = useState("");
   const [preview, setPreview] = useState<any>(null);
   const [isParsing, setIsParsing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // Novo estado de loading para o Jarvis
 
   // Manual form state
   const [formData, setFormData] = useState({
     title: task?.title || "",
-    frente: task?.frente || "reativacao_ig",
-    canal: task?.canal || "instagram",
-    tipo: task?.tipo || "conteudo",
+    frente: (task as any)?.contexto || "reativacao_ig", // Ajustado para bater com o banco
+    canal: (task as any)?.tag || "instagram",
+    tipo: (task as any)?.categoria || "conteudo",
     prazo: task?.prazo ? new Date(task.prazo).toISOString().split("T")[0] : "",
     prioridade: task?.prioridade || "media",
     esforco: task?.esforco || "medio",
@@ -49,76 +51,94 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
     notas: task?.notas || "",
   });
 
+  // Legado (tRPC) - Mantemos o update e parseNatural por enquanto
   const parseNatural = trpc.tasks.parseNatural.useMutation();
-  const createTask = trpc.tasks.create.useMutation();
   const updateTask = trpc.tasks.update.useMutation();
 
   const handleParseNatural = async () => {
     if (!naturalInput.trim()) {
-      toast.error("Digite uma descriÃ§Ã£o da tarefa");
+      toast.error("Digite uma descrição da tarefa");
       return;
     }
 
     setIsParsing(true);
     try {
       const result = await parseNatural.mutateAsync({ input: naturalInput });
-
       if (result.success && result.task) {
         setPreview(result);
         toast.success("Tarefa interpretada com sucesso!");
       } else {
-        toast.error(result.preview || "NÃ£o foi possÃ­vel interpretar a tarefa");
+        toast.error(result.preview || "Não foi possível interpretar a tarefa");
       }
     } catch (error: any) {
-      console.error("[TaskModal] Parse error:", error);
-      const errorMsg = error?.message || "Erro desconhecido";
-      toast.error(`Erro ao interpretar tarefa: ${errorMsg}`);
+      toast.error(`Erro ao interpretar: ${error?.message || "Erro desconhecido"}`);
     } finally {
       setIsParsing(false);
     }
   };
 
+  // NOVA LÓGICA: Criar via Jarvis (n8n)
   const handleCreateFromPreview = async () => {
     if (!preview?.task) return;
 
+    setIsSaving(true);
     try {
-      await createTask.mutateAsync({
+      await jarvisApi.createTask({
         ...preview.task,
-        prazo: preview.task.prazo ? new Date(preview.task.prazo) : undefined,
+        contexto: preview.task.frente,
+        tag: preview.task.canal,
+        categoria: preview.task.tipo,
+        userId: 1 // Temporário até termos auth
       });
-      toast.success("Tarefa criada com sucesso!");
+      toast.success("Jarvis criou a tarefa!");
       onSuccess?.();
       handleClose();
     } catch (error) {
-      toast.error("Erro ao criar tarefa");
+      toast.error("Erro ao falar com o Jarvis");
+    } finally {
+      setIsSaving(false);
     }
   };
 
+  // NOVA LÓGICA: Manual Submit via Jarvis
   const handleManualSubmit = async () => {
     if (!formData.title.trim()) {
-      toast.error("TÃ­tulo Ã© obrigatÃ³rio");
+      toast.error("Título é obrigatório");
       return;
     }
 
+    setIsSaving(true);
     try {
       if (task) {
+        // PATCH ainda via tRPC por enquanto, até chegarmos lá
         await updateTask.mutateAsync({
           id: task.id,
           ...formData,
           prazo: formData.prazo ? new Date(formData.prazo) : undefined,
-        });
-        toast.success("Tarefa atualizada com sucesso!");
-      } else {
-        await createTask.mutateAsync({
-          ...formData,
-          prazo: formData.prazo ? new Date(formData.prazo) : undefined,
         } as any);
-        toast.success("Tarefa criada com sucesso!");
+        toast.success("Tarefa atualizada!");
+      } else {
+        // CRIAÇÃO via Jarvis (n8n)
+        await jarvisApi.createTask({
+          title: formData.title,
+          contexto: formData.frente,
+          tag: formData.canal,
+          categoria: formData.tipo,
+          prioridade: formData.prioridade as any,
+          esforco: formData.esforco as any,
+          notas: formData.notas,
+          bloqueador: formData.bloqueador,
+          prazo: formData.prazo ? new Date(formData.prazo).toISOString() : undefined,
+          userId: 1
+        });
+        toast.success("Jarvis registrou a nova tarefa!");
       }
       onSuccess?.();
       handleClose();
     } catch (error) {
-      toast.error(task ? "Erro ao atualizar tarefa" : "Erro ao criar tarefa");
+      toast.error("Erro na operação");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -141,7 +161,6 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
           </DialogDescription>
         </DialogHeader>
 
-        {/* Mode Toggle */}
         {!task && (
           <div className="flex gap-2 p-1 bg-muted rounded-lg">
             <Button
@@ -164,13 +183,12 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
           </div>
         )}
 
-        {/* Natural Language Input */}
         {mode === "natural" && !preview && (
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Descreva a tarefa</Label>
               <Textarea
-                placeholder='Ex: "Post fixado manifesto no IG para hoje alta" ou "Configurar conta Shopee amanhÃ£ mÃ©dia logÃ­stica"'
+                placeholder='Ex: "Post fixado manifesto no IG para hoje alta"'
                 value={naturalInput}
                 onChange={(e) => setNaturalInput(e.target.value)}
                 rows={4}
@@ -183,22 +201,15 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
               className="w-full"
             >
               {isParsing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Interpretando...
-                </>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Interpretando...</>
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Interpretar com IA
-                </>
+                <><Sparkles className="w-4 h-4 mr-2" /> Interpretar com IA</>
               )}
             </Button>
           </div>
         )}
 
-        {/* Preview */}
-        {preview && preview.task && (
+        {preview && (
           <div className="space-y-4">
             <Alert className="bg-primary/10 border-primary/30">
               <Check className="w-4 h-4 text-primary" />
@@ -206,190 +217,75 @@ export function TaskModal({ open, onOpenChange, onSuccess, task }: TaskModalProp
                 {preview.preview}
               </AlertDescription>
             </Alert>
-
             <div className="flex gap-2">
-              <Button onClick={handleCreateFromPreview} className="flex-1">
-                <Check className="w-4 h-4 mr-2" />
-                Confirmar e Criar
+              <Button onClick={handleCreateFromPreview} disabled={isSaving} className="flex-1">
+                {isSaving ? <Loader2 className="animate-spin" /> : "Confirmar e Criar"}
               </Button>
-              <Button variant="outline" onClick={() => setPreview(null)}>
-                <X className="w-4 h-4 mr-2" />
-                Cancelar
-              </Button>
+              <Button variant="outline" onClick={() => setPreview(null)}>Cancelar</Button>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setMode("manual");
-                setFormData({
-                  ...formData,
-                  ...preview.task,
-                  prazo: preview.task.prazo
-                    ? new Date(preview.task.prazo).toISOString().split("T")[0]
-                    : "",
-                });
-                setPreview(null);
-              }}
-              className="w-full"
-            >
-              Editar manualmente
-            </Button>
           </div>
         )}
 
-        {/* Manual Form */}
         {mode === "manual" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">TÃ­tulo *</Label>
+              <Label htmlFor="title">Título *</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Ex: Atualizar bio e destaques"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="frente">Frente</Label>
-                <Select
-                  value={formData.frente}
-                  onValueChange={(v) => setFormData({ ...formData, frente: v as any })}
-                >
-                  <SelectTrigger id="frente">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={formData.frente} onValueChange={(v) => setFormData({ ...formData, frente: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="reativacao_ig">ReativaÃ§Ã£o IG</SelectItem>
+                    <SelectItem value="reativacao_ig">Reativação IG</SelectItem>
                     <SelectItem value="canais_venda">Canais de Venda</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="canal">Canal</Label>
-                <Select
-                  value={formData.canal}
-                  onValueChange={(v) => setFormData({ ...formData, canal: v as any })}
-                >
-                  <SelectTrigger id="canal">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={formData.canal} onValueChange={(v) => setFormData({ ...formData, canal: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="mercado_livre">Mercado Livre</SelectItem>
                     <SelectItem value="shopee">Shopee</SelectItem>
-                    <SelectItem value="tiktok_shop">TikTok Shop</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tipo">Tipo</Label>
-                <Select
-                  value={formData.tipo}
-                  onValueChange={(v) => setFormData({ ...formData, tipo: v as any })}
-                >
-                  <SelectTrigger id="tipo">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="conteudo">ConteÃºdo</SelectItem>
-                    <SelectItem value="cadastro_listing">Cadastro/Listing</SelectItem>
-                    <SelectItem value="politicas">PolÃ­ticas</SelectItem>
-                    <SelectItem value="logistica">LogÃ­stica</SelectItem>
-                    <SelectItem value="criativos_ugc">Criativos/UGC</SelectItem>
-                    <SelectItem value="ads">Ads</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="prazo">Prazo</Label>
-                <Input
-                  id="prazo"
-                  type="date"
-                  value={formData.prazo}
-                  onChange={(e) => setFormData({ ...formData, prazo: e.target.value })}
-                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="prioridade">Prioridade</Label>
-                <Select
-                  value={formData.prioridade}
-                  onValueChange={(v) => setFormData({ ...formData, prioridade: v as any })}
-                >
-                  <SelectTrigger id="prioridade">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={formData.prioridade} onValueChange={(v) => setFormData({ ...formData, prioridade: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="baixa">Baixa</SelectItem>
-                    <SelectItem value="media">MÃ©dia</SelectItem>
+                    <SelectItem value="media">Média</SelectItem>
                     <SelectItem value="alta">Alta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="esforco">EsforÃ§o</Label>
-                <Select
-                  value={formData.esforco}
-                  onValueChange={(v) => setFormData({ ...formData, esforco: v as any })}
-                >
-                  <SelectTrigger id="esforco">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="baixo">Baixo</SelectItem>
-                    <SelectItem value="medio">MÃ©dio</SelectItem>
-                    <SelectItem value="alto">Alto</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="prazo">Prazo</Label>
+                <Input type="date" value={formData.prazo} onChange={(e) => setFormData({ ...formData, prazo: e.target.value })} />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bloqueador">Bloqueador (opcional)</Label>
-              <Input
-                id="bloqueador"
-                value={formData.bloqueador}
-                onChange={(e) => setFormData({ ...formData, bloqueador: e.target.value })}
-                placeholder="Ex: Aguardando resposta do fornecedor"
-              />
+              <Label htmlFor="notas">Notas</Label>
+              <Textarea value={formData.notas} onChange={(e) => setFormData({ ...formData, notas: e.target.value })} rows={3} />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notas">Notas (opcional)</Label>
-              <Textarea
-                id="notas"
-                value={formData.notas}
-                onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                placeholder="InformaÃ§Ãµes adicionais..."
-                rows={3}
-              />
-            </div>
-
-            <Button
-              onClick={handleManualSubmit}
-              disabled={createTask.isPending || updateTask.isPending}
-              className="w-full"
-            >
-              {createTask.isPending || updateTask.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {task ? "Atualizando..." : "Criando..."}
-                </>
-              ) : (
-                <>{task ? "Atualizar Tarefa" : "Criar Tarefa"}</>
-              )}
+            <Button onClick={handleManualSubmit} disabled={isSaving || updateTask.isPending} className="w-full">
+              {isSaving ? <Loader2 className="animate-spin" /> : task ? "Atualizar" : "Criar"}
             </Button>
           </div>
         )}
