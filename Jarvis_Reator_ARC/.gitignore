@@ -1,0 +1,54 @@
+# ==========================================
+# 1. BLOQUEIO GLOBAL DE RUÍDO (Economia de Tokens)
+# ==========================================
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ==========================================
+# 2. SEGURANÇA CRÍTICA (Bloqueio Absoluto)
+# ==========================================
+.env
+.env.*
+*.pem
+*.key
+# Bloqueando credenciais AWS locais se existirem
+.aws/
+credentials
+
+# ==========================================
+# 3. BACKEND & INFRAESTRUTURA (Jarvis_Reator_ARC)
+# ==========================================
+# Ignora artefatos de build do TypeScript
+Jarvis_Reator_ARC/dist/
+Jarvis_Reator_ARC/build/
+
+# TERRAFORM: Mantém os .tf (código), ignora o estado local e plugins
+Jarvis_Reator_ARC/server/.terraform/
+Jarvis_Reator_ARC/server/*.tfstate
+Jarvis_Reator_ARC/server/*.tfstate.backup
+Jarvis_Reator_ARC/server/.terraform.lock.hcl
+
+# LAMBDAS: Mantém o código fonte (src), ignora os pacotes zipados gerados
+*.zip
+Jarvis_Reator_ARC/server/src/lambdas/**/node_modules/
+Jarvis_Reator_ARC/server/src/lambdas/**/package-lock.json
+
+# AMPIFY: Ignora a pasta de build do Amplify, mantém a config
+Jarvis_Reator_ARC/amplify/#current-cloud-backend
+Jarvis_Reator_ARC/amplify/.config
+Jarvis_Reator_ARC/amplify/mock-data
+
+# ==========================================
+# 4. FRONTEND NOVO (Jarvis_U.I)
+# ==========================================
+Jarvis_U.I/node_modules/
+Jarvis_U.I/dist/
+Jarvis_U.I/.env
+Jarvis_U.I/coverage/
