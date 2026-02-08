@@ -17,11 +17,6 @@ export function TaskForm() {
 
     setIsLoading(true);
 
-    const payload = {
-      description,
-      sessionId: "bruno_session_01",
-    };
-
     try {
       const response = await fetch("https://bruno-spock.app.n8n.cloud/webhook/tasks", {
         method: "POST",
@@ -35,10 +30,12 @@ export function TaskForm() {
       });
 
       if (response.ok) {
-        console.log("Task successfully injected into the ARC Reactor.");
-        setDescription("");
+          const data = await response.text();  // .text() – evita JSON fail
+          alert(data.message || 'Tarefa registrada com Jarvis!');  // Visual simples
+          console.log("Raw response:", data);
+          setDescription("");
       } else {
-        throw new Error(`Pipeline Error: ${response.statusText}`);
+        throw new Error(`Erro: ${response.status}`);
       }
     } catch (error) {
       console.error("Communication failure with n8n workflow:", error);

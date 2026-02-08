@@ -4,6 +4,7 @@
  * Task Ingestion interface.
  */
 import { TaskForm } from "./components/TaskForm"
+import { Toaster } from 'sonner';
 
 function App() {
   return (
@@ -24,8 +25,9 @@ function App() {
       <footer className="mt-20 text-center text-xs text-slate-400">
         Connected to: https://bruno-spock.app.n8n.cloud
       </footer>
+      <Toaster position="top-right" richColors />
     </div>
-  )
+  );
 }
 
 export default App
