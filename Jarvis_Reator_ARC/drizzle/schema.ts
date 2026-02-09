@@ -26,16 +26,18 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
- * Tasks table for Closet A Planner MVP
- * Stores all tasks with metadata for Frente A (Instagram) and Frente B (Sales Channels)
+ * Tasks table for Jarvis 2.0
+ * Stores all tasks with metadata for Life Management (Work, Personal, Health, Study)
  */
 export const tasks = mysqlTable("tasks", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
   title: varchar("title", { length: 255 }).notNull(),
-  frente: mysqlEnum("frente", ["reativacao_ig", "canais_venda"]).notNull(),
-  canal: mysqlEnum("canal", ["instagram", "mercado_livre", "shopee", "tiktok_shop"]).notNull(),
-  tipo: mysqlEnum("tipo", ["conteudo", "cadastro_listing", "politicas", "logistica", "criativos_ugc", "ads"]).notNull(),
+  frente: mysqlEnum("frente", ["trabalho", "pessoal", "saude", "estudo"]).notNull(),
+  // canal: mysqlEnum("canal", ["instagram", "mercado_livre", "shopee", "tiktok_shop"]).notNull(),
+  // Field 'canal' deprecated in Jarvis 2.0 as it was specific to e-commerce. Kept commented for reference or future migration needs.
+  local: varchar("local", { length: 64 }), // Replacement for canal, generic location context
+  tipo: mysqlEnum("tipo", ["foco_profundo", "manutencao_vital", "rotina", "urgente"]).notNull(),
   status: mysqlEnum("status", ["todo", "doing", "blocked", "done"]).default("todo").notNull(),
   prazo: timestamp("prazo"),
   prioridade: mysqlEnum("prioridade", ["baixa", "media", "alta"]).default("media").notNull(),

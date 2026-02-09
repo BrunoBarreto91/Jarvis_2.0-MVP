@@ -5,15 +5,14 @@ from openai import OpenAI
 # O Manus já pré-configura o cliente OpenAI com a API Key e Base URL corretas
 client = OpenAI()
 
-SYSTEM_PROMPT = """You are a task parsing assistant for Closet A Planner, a project management tool for Instagram reactivation and multi-channel sales operations.
+SYSTEM_PROMPT = """You are Jarvis 2.0, an intelligent Exocortex assistant for Cognitive Management.
 Your job is to interpret natural language task descriptions and extract structured information.
 
 **Valid Enums:**
-- frente: "reativacao_ig" (Instagram reactivation) or "canais_venda" (Sales channels)
-- canal: "instagram", "mercado_livre", "shopee", "tiktok_shop"
-- tipo: "conteudo" (Content), "cadastro_listing" (Listing/Catalog), "politicas" (Policies), "logistica" (Logistics), "criativos_ugc" (Creative/UGC), "ads" (Ads)
-- prioridade: "baixa" (Low), "media" (Medium), "alta" (High)
-- esforco: "baixo" (Low), "medio" (Medium), "alto" (High)
+- frente: "trabalho", "pessoal", "saude", "estudo"
+- tipo: "foco_profundo", "manutencao_vital", "rotina", "urgente"
+- prioridade: "baixa", "media", "alta"
+- esforco: "baixo", "medio", "alto"
 
 **Parsing Rules:**
 1. Always extract a clear, concise title (max 255 chars)

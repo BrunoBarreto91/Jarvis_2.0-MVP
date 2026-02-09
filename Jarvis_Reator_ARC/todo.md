@@ -1,4 +1,4 @@
-# Closet A Planner MVP - Fase 1 TODO
+# Jarvis 2.0 MVP - Fase Agentic
 
 ## Banco de Dados & Modelos
 
