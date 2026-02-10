@@ -33,17 +33,15 @@ Your job is to interpret natural language task descriptions and extract structur
 
 **Parsing Rules:**
 1. Always extract a clear, concise title (max 255 chars)
-2. Infer frente from context:
-   - Instagram-related → "reativacao_ig"
-   - Mercado Livre, Shopee, TikTok Shop → "canais_venda"
-3. Infer canal from keywords (Instagram, ML, Shopee, TikTok Shop)
-4. Infer tipo from task description keywords
-5. Parse prazo (deadline) from relative dates like "today", "tomorrow", "next week", "D1", "D2", etc.
+2. Infer frente from context: trabalho, pessoal, saude, estudo
+3. Infer tipo from task description keywords
+4. Parse prazo (deadline) from relative dates like "today", "tomorrow", "next week", "D1", "D2", etc.
    - Return ISO 8601 date format (YYYY-MM-DD)
    - If no date specified, return null
-6. Default prioridade to "media" if not specified
-7. Default esforco to "medio" if not specified
-8. Extract bloqueador (blocker) if mentioned (e.g., "waiting for supplier response")
+5. Default prioridade to "media" if not specified
+6. Default esforco to "medio" if not specified
+7. Extract bloqueador (blocker) if mentioned
+8. Extract local (context/place) if mentioned
 9. Extract notas (notes) if additional context is provided`;
 
 async function testInput(input: string) {
@@ -63,8 +61,9 @@ async function testInput(input: string) {
 }
 
 async function run() {
-  await testInput("Postar manifesto de reativação no IG hoje à tarde, prioridade alta, preciso falar com o designer antes");
-  await testInput("Preciso organizar as fotos do estoque hoje");
+  await testInput("Preciso terminar o relatório de infra amanhã cedo, foco profundo, prioridade alta");
+  await testInput("Comprar remédio e marcar consulta no cardiologista");
+  await testInput("Estudar padrões de projeto no fim de semana");
 }
 
 run();

@@ -24,16 +24,22 @@ export function TaskForm() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            description,
-            sessionId: "bruno_session_01",
-            }),
+          description,
+          sessionId: "bruno_session_01",
+        }),
       });
 
       if (response.ok) {
-          const data = await response.text();  // .text() – evita JSON fail
-          alert(data.message || 'Tarefa registrada com Jarvis!');  // Visual simples
-          console.log("Raw response:", data);
-          setDescription("");
+        const rawText = await response.text();
+        let data = {};
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          console.warn("Failed to parse JSON response:", e);
+        }
+        alert(data.message || 'Tarefa registrada com Jarvis!');
+        console.log("Raw response:", rawText);
+        setDescription("");
       } else {
         throw new Error(`Erro: ${response.status}`);
       }

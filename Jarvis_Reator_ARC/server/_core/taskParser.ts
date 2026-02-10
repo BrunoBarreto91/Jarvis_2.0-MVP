@@ -7,9 +7,9 @@ import { invokeLLM } from "./llm";
 
 export interface ParsedTask {
   title: string;
-  frente: "reativacao_ig" | "canais_venda";
-  canal: "instagram" | "mercado_livre" | "shopee" | "tiktok_shop";
-  tipo: "conteudo" | "cadastro_listing" | "politicas" | "logistica" | "criativos_ugc" | "ads";
+  frente: "trabalho" | "pessoal" | "saude" | "estudo";
+  local?: string;
+  tipo: "foco_profundo" | "manutencao_vital" | "rotina" | "urgente";
   prazo?: Date;
   prioridade: "baixa" | "media" | "alta";
   esforco: "baixo" | "medio" | "alto";
@@ -37,17 +37,15 @@ Your job is to interpret natural language task descriptions and extract structur
 
 **Parsing Rules:**
 1. Always extract a clear, concise title (max 255 chars)
-2. Infer frente from context:
-   - Instagram-related → "reativacao_ig"
-   - Mercado Livre, Shopee, TikTok Shop → "canais_venda"
-3. Infer canal from keywords (Instagram, ML, Shopee, TikTok Shop)
-4. Infer tipo from task description keywords
-5. Parse prazo (deadline) from relative dates like "today", "tomorrow", "next week", "D1", "D2", etc.
+2. Infer frente from context (trabalho, pessoal, saude, estudo)
+3. Infer tipo from task description keywords (depth, vital, routine, urgent)
+4. Parse prazo (deadline) from relative dates like "today", "tomorrow", "next week", "D1", "D2", etc.
    - Return ISO 8601 date format (YYYY-MM-DD)
    - If no date specified, return null
-6. Default prioridade to "media" if not specified
-7. Default esforco to "medio" if not specified
-8. Extract bloqueador (blocker) if mentioned (e.g., "waiting for supplier response")
+5. Default prioridade to "media" if not specified
+6. Default esforco to "medio" if not specified
+7. Extract bloqueador (blocker) if mentioned
+8. Extract local (context/place) if mentioned
 9. Extract notas (notes) if additional context is provided
 
 **Response Format:**
@@ -56,9 +54,9 @@ Return a JSON object with this structure:
   "success": true,
   "task": {
     "title": "string",
-    "frente": "reativacao_ig" | "canais_venda",
-    "canal": "instagram" | "mercado_livre" | "shopee" | "tiktok_shop",
-    "tipo": "conteudo" | "cadastro_listing" | "politicas" | "logistica" | "criativos_ugc" | "ads",
+    "frente": "trabalho" | "pessoal" | "saude" | "estudo",
+    "local": "string" | null,
+    "tipo": "foco_profundo" | "manutencao_vital" | "rotina" | "urgente",
     "prazo": "YYYY-MM-DD" | null,
     "prioridade": "baixa" | "media" | "alta",
     "esforco": "baixo" | "medio" | "alto",
@@ -102,16 +100,16 @@ export async function parseNaturalLanguage(input: string): Promise<ParseResult> 
                 type: "object",
                 properties: {
                   title: { type: "string" },
-                  frente: { type: "string", enum: ["reativacao_ig", "canais_venda"] },
-                  canal: { type: "string", enum: ["instagram", "mercado_livre", "shopee", "tiktok_shop"] },
-                  tipo: { type: "string", enum: ["conteudo", "cadastro_listing", "politicas", "logistica", "criativos_ugc", "ads"] },
+                  frente: { type: "string", enum: ["trabalho", "pessoal", "saude", "estudo"] },
+                  local: { type: "string", nullable: true },
+                  tipo: { type: "string", enum: ["foco_profundo", "manutencao_vital", "rotina", "urgente"] },
                   prazo: { type: "string", nullable: true },
                   prioridade: { type: "string", enum: ["baixa", "media", "alta"] },
                   esforco: { type: "string", enum: ["baixo", "medio", "alto"] },
                   bloqueador: { type: "string", nullable: true },
                   notas: { type: "string", nullable: true },
                 },
-                required: ["title", "frente", "canal", "tipo", "prioridade", "esforco"],
+                required: ["title", "frente", "tipo", "prioridade", "esforco"],
               },
               missingFields: { type: "array", items: { type: "string" } },
               suggestedValues: { type: "object" },
@@ -155,7 +153,7 @@ export async function parseNaturalLanguage(input: string): Promise<ParseResult> 
     const task: ParsedTask = {
       title: parsed.task.title,
       frente: parsed.task.frente,
-      canal: parsed.task.canal,
+      local: parsed.task.local || undefined,
       tipo: parsed.task.tipo,
       prazo: parsed.task.prazo ? new Date(parsed.task.prazo) : undefined,
       prioridade: parsed.task.prioridade,
@@ -188,8 +186,8 @@ export async function parseNaturalLanguage(input: string): Promise<ParseResult> 
 function generatePreview(task: ParsedTask): string {
   const parts = [
     `📌 Título: ${task.title}`,
-    `📂 Frente: ${task.frente === "reativacao_ig" ? "Reativação IG" : "Canais de Venda"}`,
-    `📱 Canal: ${task.canal}`,
+    `📂 Frente: ${task.frente}`,
+    `📍 Local: ${task.local || "Não especificado"}`,
     `🏷️ Tipo: ${task.tipo}`,
     task.prazo ? `📅 Prazo: ${task.prazo.toLocaleDateString("pt-BR")}` : "📅 Prazo: Não definido",
     `⭐ Prioridade: ${task.prioridade}`,
