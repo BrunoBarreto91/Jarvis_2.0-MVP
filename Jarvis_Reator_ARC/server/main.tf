@@ -79,7 +79,7 @@ data "aws_subnet" "public_subnet" {
 }
 
 data "aws_security_group" "existing_sg" {
-  id = "sg-098b15ea36d6387bc"
+  id = "sg-0d72c1703f93e5e5c"
 }
 
 data "aws_ami" "ubuntu" {
@@ -93,7 +93,7 @@ data "aws_ami" "ubuntu" {
 
 # RDS como Data Source (Apenas Leitura - Proteção contra destruição)
 data "aws_db_instance" "jarvis_db" {
-  db_instance_identifier = "terraform-20251229185442948200000001"
+  db_instance_identifier = "terraform-20260128204747981300000004"
 }
 
 # --- 4. NOVOS RECURSOS (ORQUESTRADOR N8N) ---
@@ -128,16 +128,7 @@ resource "aws_security_group" "n8n_sg" {
   }
 }
 
-# Regra de Acesso ao Banco (Injetada no SG Legado)
-resource "aws_security_group_rule" "allow_n8n_to_rds" {
-  type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.n8n_sg.id
-  security_group_id        = data.aws_security_group.existing_sg.id
-  description              = "Acesso do n8n ao banco legado"
-}
+# A regra de acesso ao banco já existe no security group do RDS.
 
 # IAM Role e Profile
 resource "aws_iam_role" "n8n_ec2_role" {
@@ -150,6 +141,11 @@ resource "aws_iam_role" "n8n_ec2_role" {
       Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "n8n_ssm_policy" {
+  role       = aws_iam_role.n8n_ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_instance_profile" "n8n_profile" {
@@ -165,50 +161,14 @@ resource "aws_instance" "n8n_server" {
 
   vpc_security_group_ids = [aws_security_group.n8n_sg.id]
   key_name               = var.ssh_key_name # Lê do tfvars: "bruno-terraform-deployer"
-  iam_instance_profile   = aws_iam_instance_profile.n8n_profile.name
 
-  # User Data para instalação e boot
-  user_data = <<-EOF
-              #!/bin/bash
-              apt-get update
-              apt-get install -y docker.io docker-compose-plugin
-              systemctl start docker
-              systemctl enable docker
+  root_block_device {
+    volume_size = 20 # Aumentando para 20GB para suportar Swap
+    volume_type = "gp3"
+  }
 
-              TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-              PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/public-ipv4)
-
-              mkdir -p /home/ubuntu/n8n
-              cat <<EOT >> /home/ubuntu/n8n/docker-compose.yml
-              version: '3.8'
-              services:
-                n8n:
-                  image: n8nio/n8n:latest
-                  ports:
-                    - "5678:5678"
-                  environment:
-                    - N8N_BASIC_AUTH_ACTIVE=true
-                    - N8N_BASIC_AUTH_USER=${var.n8n_user}
-                    - N8N_BASIC_AUTH_PASSWORD=${var.n8n_pass}
-                    - WEBHOOK_URL=http://\$PUBLIC_IP:5678/
-                    - DB_TYPE=mysqldb
-                    - DB_MYSQLDB_DATABASE=jarvis_db
-                    - DB_MYSQLDB_HOST=${data.aws_db_instance.jarvis_db.address}
-                    - DB_MYSQLDB_PORT=${data.aws_db_instance.jarvis_db.port}
-                    - DB_MYSQLDB_USER=admin
-                    - DB_MYSQLDB_PASSWORD=${var.db_password}
-                    - GENERIC_TIMEZONE=America/Sao_Paulo
-                  volumes:
-                    - n8n_data:/home/node/.n8n
-                  restart: always
-              volumes:
-                n8n_data:
-              EOT
-
-              chown -R ubuntu:ubuntu /home/ubuntu/n8n
-              cd /home/ubuntu/n8n
-              docker compose up -d
-              EOF
+  # User Data removido para configuração manual via SSH
+  # user_data = ...
 
   tags = { Name = "jarvis-n8n-server" }
 }
@@ -225,4 +185,79 @@ output "n8n_url" {
 
 output "ssh_command" {
   value = "ssh -i ${var.ssh_key_name}.pem ubuntu@${aws_eip.n8n_eip.public_ip}"
+}
+
+# --- 6. COGNITO RESOURCES ---
+
+resource "aws_cognito_user_pool" "jarvis_pool" {
+  name = "jarvis-user-pool"
+
+  # Permitir login com email
+  alias_attributes = ["email"]
+  auto_verified_attributes = ["email"]
+
+  password_policy {
+    minimum_length    = 8
+    require_lowercase = true
+    require_numbers   = true
+    require_symbols   = true
+    require_uppercase = true
+  }
+
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+  }
+
+  tags = {
+    Name = "jarvis-user-pool"
+  }
+}
+
+resource "aws_cognito_user_pool_client" "jarvis_client" {
+  name = "jarvis-client"
+
+  user_pool_id = aws_cognito_user_pool.jarvis_pool.id
+
+  generate_secret = false
+  
+  explicit_auth_flows = [
+    "ALLOW_USER_PASSWORD_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_SRP_AUTH",
+    "ALLOW_ADMIN_USER_PASSWORD_AUTH"
+  ]
+
+  # Configurações de Token (Opcional, mas recomendado)
+  access_token_validity  = 60
+  id_token_validity      = 60
+  refresh_token_validity = 30
+  
+  token_validity_units {
+    access_token  = "minutes"
+    id_token      = "minutes"
+    refresh_token = "days"
+  }
+}
+
+resource "aws_cognito_user_pool_domain" "jarvis_domain" {
+  domain       = "jarvis-auth-bunker" # Deve ser único globalmente
+  user_pool_id = aws_cognito_user_pool.jarvis_pool.id
+}
+
+# --- 7. NOVOS OUTPUTS (COGNITO) ---
+
+output "cognito_user_pool_id" {
+  value = aws_cognito_user_pool.jarvis_pool.id
+}
+
+output "cognito_client_id" {
+  value = aws_cognito_user_pool_client.jarvis_client.id
+}
+
+output "cognito_domain" {
+  value = aws_cognito_user_pool_domain.jarvis_domain.domain
+}
+
+output "cognito_region" {
+  value = var.aws_region
 }

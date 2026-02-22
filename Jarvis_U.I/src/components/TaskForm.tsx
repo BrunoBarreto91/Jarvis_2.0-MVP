@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 /**
  * TaskForm Component - Jarvis 2.0 Ingestion Layer
  * Logic: Captures raw intent and dispatches to n8n for AI processing.
  */
-export function TaskForm() {
+export function TaskForm({ onTaskCreated }: { onTaskCreated?: () => void }) {
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,33 +20,14 @@ export function TaskForm() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://bruno-spock.app.n8n.cloud/webhook/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          description,
-          sessionId: "bruno_session_01",
-        }),
-      });
-
-      if (response.ok) {
-        const rawText = await response.text();
-        let data = {};
-        try {
-          data = JSON.parse(rawText);
-        } catch (e) {
-          console.warn("Failed to parse JSON response:", e);
-        }
-        alert(data.message || 'Tarefa registrada com Jarvis!');
-        console.log("Raw response:", rawText);
-        setDescription("");
-      } else {
-        throw new Error(`Erro: ${response.status}`);
-      }
+      await api.createTask(description);
+      // alert('Tarefa registrada com Jarvis!'); // Removing alert for smoother UX
+      if (onTaskCreated) onTaskCreated();
+      setDescription("");
+      toast.success("Tarefa enviada para o Jarvis!");
     } catch (error) {
       console.error("Communication failure with n8n workflow:", error);
+      toast.error("Erro ao enviar tarefa.");
     } finally {
       setIsLoading(false);
     }

@@ -25,7 +25,9 @@
         "httpMethod": "PATCH",
         "path": "tasks",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "*"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
@@ -424,7 +426,23 @@
         "path": "tasks",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "*"
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              }
+            ]
+          }
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -864,7 +882,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "c65dba32-1b10-477d-a1bd-c7c0fb127cbc",
+  "versionId": "376a592f-fa66-48a4-807f-eefaf9a8ddc8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "6f8acae540a61e66b7a5866e65cb0c3802c27ed8c968f0229af9ba0b2487906e"

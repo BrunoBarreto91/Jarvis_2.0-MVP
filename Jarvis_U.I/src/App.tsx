@@ -1,33 +1,51 @@
-/**
- * Main Application Entry Point - Jarvis 2.0
- * This component sets up the basic layout shell and renders the primary
- * Task Ingestion interface.
- */
-import { TaskForm } from "./components/TaskForm"
-import { Toaster } from 'sonner';
+import { Route, Switch } from "wouter";
+import { AuthProvider } from "@/_core/context/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import ZenMode from "@/pages/ZenMode";
+import TasksPage from "@/pages/TasksPage";
+import KanbanPage from "@/pages/KanbanPage";
+import BlockersPage from "@/pages/BlockersPage";
+import SettingsPage from "@/pages/SettingsPage";
+import LoginPage from "@/pages/LoginPage";
+import SignUpPage from "@/pages/SignUpPage";
+import VerifyPage from "@/pages/VerifyPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import { Toaster } from "sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function App() {
   return (
-    // Base container with Slate theme colors for visual comfort (ADHD-Friendly)
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      {/* Header section: Provides immediate context of the current module */}
-      <header className="max-w-lg mx-auto mb-10 text-center">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Jarvis 2.0</h1>
-        <p className="text-slate-500 mt-2">Central de Ingestão de Tarefas (Reator ARC)</p>
-      </header>
+    <AuthProvider>
+      <Switch>
+        {/* ── Public routes – rendered WITHOUT dashboard shell ── */}
+        <Route path="/login" component={LoginPage} />
+        <Route path="/signup" component={SignUpPage} />
+        <Route path="/verify" component={VerifyPage} />
+        <Route path="/forgot-password" component={ForgotPasswordPage} />
 
-      {/* Main interaction zone */}
-      <main className="flex justify-center">
-        <TaskForm />
-      </main>
+        {/* ── Protected routes – require authenticated session ── */}
+        <Route>
+          <ProtectedRoute>
+            <DashboardLayout>
+              <ErrorBoundary>
+                <Switch>
+                  <Route path="/" component={ZenMode} />
+                  <Route path="/tasks" component={TasksPage} />
+                  <Route path="/kanban" component={KanbanPage} />
+                  <Route path="/blockers" component={BlockersPage} />
+                  <Route path="/settings" component={SettingsPage} />
+                  <Route>404: Página não encontrada</Route>
+                </Switch>
+              </ErrorBoundary>
+            </DashboardLayout>
+          </ProtectedRoute>
+        </Route>
+      </Switch>
 
-      {/* Status indicator footer */}
-      <footer className="mt-20 text-center text-xs text-slate-400">
-        Connected to: https://bruno-spock.app.n8n.cloud
-      </footer>
       <Toaster position="top-right" richColors />
-    </div>
+    </AuthProvider>
   );
 }
 
-export default App
+export default App;

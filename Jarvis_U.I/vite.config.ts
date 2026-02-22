@@ -8,6 +8,10 @@ import { defineConfig } from "vite"
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Polyfill para libs Node.js (ex: buffer usado por amazon-cognito-identity-js) no browser
+    global: "globalThis",
+  },
   resolve: {
     alias: {
       // Directs the bundler to resolve the "@" symbol to the "src" directory
